@@ -1,0 +1,95 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Mobile: Install dependencies",
+      "type": "shell",
+      "command": "yarn install",
+      "options": {
+        "cwd": "${workspaceFolder}/Mobile"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Mobile: Start Metro",
+      "type": "shell",
+      "command": "yarn start",
+      "options": {
+        "cwd": "${workspaceFolder}/Mobile"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Mobile: Run iOS",
+      "type": "shell",
+      "command": "yarn ios",
+      "options": {
+        "cwd": "${workspaceFolder}/Mobile"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Mobile: Run Android",
+      "type": "shell",
+      "command": "yarn android",
+      "options": {
+        "cwd": "${workspaceFolder}/Mobile"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Preview API: Create venv",
+      "type": "shell",
+      "command": "python3 -m venv .venv",
+      "options": {
+        "cwd": "${workspaceFolder}/Backend/preview-api"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Preview API: Install dependencies",
+      "type": "shell",
+      "command": ".venv/bin/pip install -r requirements.txt",
+      "options": {
+        "cwd": "${workspaceFolder}/Backend/preview-api"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Preview API: Start",
+      "type": "shell",
+      "command": ".venv/bin/uvicorn server:app --host 127.0.0.1 --port 8000",
+      "options": {
+        "cwd": "${workspaceFolder}/Backend/preview-api"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Preview API: Test",
+      "type": "shell",
+      "command": "TEST_BACKEND_URL=http://127.0.0.1:8000 .venv/bin/pytest tests",
+      "options": {
+        "cwd": "${workspaceFolder}/Backend/preview-api"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Functions: Build",
+      "type": "shell",
+      "command": "npm run build",
+      "options": {
+        "cwd": "${workspaceFolder}/Backend/functions"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Functions: Firebase emulators",
+      "type": "shell",
+      "command": "firebase emulators:start",
+      "options": {
+        "cwd": "${workspaceFolder}/Backend/functions"
+      },
+      "problemMatcher": []
+    }
+  ]
+}
