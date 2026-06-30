@@ -1,0 +1,58 @@
+{
+  "summary": "Full backend + frontend regression for Knook MVP. 15/15 pytest backend tests pass (auth/OTP, users, crushes-no-raw-phone, mutual match privacy, dev trigger-reveal, messages ObjectId fix, reveal/mutual reveal, unhook, 403 on non-active matches). End-to-end mobile UI flow works: phone → OTP (dev code 123456 visible) → profile → crushes tab (countdown 05:29:00 to 6:30 PM IST, 0/0 stats) → Add Crush FAB shows 10 mock contacts with CRUSH→Added toggle → Chats empty state shows 'Trigger reveal now (demo)' button → after trigger, Mystery Match row appears → chat send works with bubble on right → reveal flow shows 'You revealed.' → after both reveal, header switches to 'Bobby · Revealed · real names' → unhook sheet confirm routes to /chats and removes match. ONE FUNCTIONAL BUG found: Add Crush search filter matches all contacts for any non-numeric query because of OR condition with empty-digit substring. Two minor RN deprecation warnings (shadow*, props.pointerEvents) printed by web preview.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "add-crush.tsx search filter",
+        "issue": "Typing a non-numeric query (e.g. 'Aarav') does NOT filter the list — all 10 contacts remain visible. Root cause: filter uses `name.includes(q) || phone.replace(/\\D/g,'').includes(q.replace(/\\D/g,''))`. When q has no digits, `q.replace(/\\D/g,'')` is '' and `phone.includes('')` is always true, so the OR is always true. Reference: /app/frontend/app/add-crush.tsx:25-27. Fix: only apply the phone-digits branch when the query actually has digits, e.g. `const qDigits = q.replace(/\\D/g,''); return contacts.filter(c => c.name.toLowerCase().includes(q) || (qDigits && c.phone.replace(/\\D/g,'').includes(qDigits)));`.",
+        "testID": "contacts-search-input",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {
+        "component": "global styles",
+        "issue": "Console warning: '\"shadow*\" style props are deprecated. Use \"boxShadow\".' Appears on app load (multiple screens). Migrate shadowColor/shadowOffset/shadowOpacity/shadowRadius usages to RN's new boxShadow API or platform-conditional styles."
+      },
+      {
+        "component": "props.pointerEvents",
+        "issue": "Console warning: 'props.pointerEvents is deprecated. Use style.pointerEvents'. Move `pointerEvents` from JSX prop to a style entry."
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_knook_backend.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Fix Add Crush search filter logic in /app/frontend/app/add-crush.tsx (lines 22-28) — gate the phone-digit substring check on qDigits being non-empty so non-numeric queries actually narrow the contact list.",
+    "Migrate deprecated shadow* style props to boxShadow (RN 0.76+) to silence console warnings.",
+    "Replace JSX `pointerEvents` prop with `style.pointerEvents` wherever used."
+  ],
+  "critical_code_review_comments": [
+    "server.py is a single 466-line file — fine for MVP but split into routers (auth/users/crushes/matches/messages/dev) before adding more features.",
+    "Privacy contract holds: GET /api/matches correctly excludes pending_reveal; raw phone never returned on /users/me or /crushes; phoneHash + phoneLast4 only.",
+    "ObjectId serialisation bug in POST /matches/{id}/messages is confirmed fixed (msg.pop('_id', None) before iso conversion; response is valid JSON, 200).",
+    "verify-otp accepts any 6-digit code by design (preview-mode mock) — should be gated behind an env flag before prod (currently always-on).",
+    "Mutual-match name reveal works only because /matches/{id}/reveal sets mutualReveal when revealedBy is a superset of participants — verified A→B order produces correct otherName on the next GET.",
+    "Frontend auth token is stored client-side and equal to uid (token === uid) — fine for the mock adapter; real Firebase will use idToken and this glue must change."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_knook_backend.py (new)"
+  ],
+  "success_rate": {
+    "backend": "100% (15/15)",
+    "frontend": "92% — all 11 listed UI flows pass except Add Crush search filter"
+  },
+  "seed_data_creation": "Each test mints fresh phone numbers (+9190xxxxxxxxx based on time). User B 'Bobby' created via backend during UI flow to exercise mutual reveal.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "EXPO_PUBLIC_BACKEND_URL is https://anonymous-dating-1.preview.emergentagent.com (NOT the 47367a40 URL in the review request — that one is stale). Use a unique phone per test run. To exercise mutual match without two browsers, create User B via backend curl and crush User A from B; then login as A in the UI, add crush, hit 'Trigger reveal now (demo)' on the Chats tab. After fix to add-crush filter, retest typing 'Aarav' → should show exactly 1 contact.",
+  "rca_of_issue": "Add Crush search filter: in /app/frontend/app/add-crush.tsx:22-28 the predicate is `name.includes(q) || phoneDigits.includes(qDigits)`. When the user types a name like 'Aarav', `qDigits` evaluates to '' and JavaScript's String.includes('') returns true for every string, so the phone-branch short-circuits the OR to true for every contact. Mitigation: short-circuit the phone branch only when `qDigits.length > 0`."
+}
