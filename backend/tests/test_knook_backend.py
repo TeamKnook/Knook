@@ -195,9 +195,7 @@ class TestMutualMatchFlow:
         r2 = requests.post(f"{API}/matches/{match_id}/reveal", headers=hB).json()
         assert r2["mutualReveal"] is True
         # After mutual, name should appear for both
-        a_view = requests.get(f"{API}/matches", headers=hA).json()
         b_view = requests.get(f"{API}/matches", headers=hB).json()
-        m_a = next(m for m in a_view if m["matchId"] == match_id)
         m_b = next(m for m in b_view if m["matchId"] == match_id)
         # Names exist only if they were set on the user profiles. Set one to confirm flow:
         # Set B's name then re-check

@@ -22,9 +22,11 @@ export default function AddCrushScreen() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return contacts;
-    return contacts.filter(
-      (c) => c.name.toLowerCase().includes(q) || c.phone.replace(/\D/g, '').includes(q.replace(/\D/g, '')),
-    );
+    const qDigits = q.replace(/\D/g, '');
+    return contacts.filter((c) => {
+      if (c.name.toLowerCase().includes(q)) return true;
+      return qDigits.length > 0 && c.phone.replace(/\D/g, '').includes(qDigits);
+    });
   }, [contacts, query]);
 
   const onAdd = async (c: ContactEntry) => {
