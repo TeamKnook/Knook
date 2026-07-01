@@ -9,12 +9,14 @@ import { firestoreService } from '@/src/services/firestore/firestoreService';
 import type { Message } from '@/src/models';
 import { colors, radius, spacing, typography } from '@/src/theme';
 import { formatChatTime } from '@/src/utils/timeUtils';
+import { diagnostics } from '@/src/utils/diagnostics';
 
 export default function ChatScreen() {
   const router = useRouter();
   const { matchId } = useLocalSearchParams<{ matchId: string }>();
-  const { match, messages, send } = useMessages(matchId);
+  const { match, messages, send, error: loadError } = useMessages(matchId);
   const [draft, setDraft] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [myUid, setMyUid] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [confirmUnhook, setConfirmUnhook] = useState(false);
@@ -43,7 +45,11 @@ export default function ChatScreen() {
     try {
       setSending(true);
       setDraft('');
+      setError(null);
       await send(text);
+    } catch (err) {
+      diagnostics.error('chat-send-failed', err, { matchId });
+      setError(err instanceof Error ? err.message : 'Could not send message');
     } finally {
       setSending(false);
     }
@@ -51,8 +57,15 @@ export default function ChatScreen() {
 
   const onUnhook = async () => {
     if (!matchId) return;
-    await firestoreService.unhook(matchId);
-    router.replace('/(tabs)/chats');
+    try {
+      setError(null);
+      await firestoreService.unhook(matchId);
+      router.replace('/(tabs)/chats');
+    } catch (err) {
+      diagnostics.error('chat-unhook-failed', err, { matchId });
+      setError(err instanceof Error ? err.message : 'Could not unhook');
+      setConfirmUnhook(false);
+    }
   };
 
   const title = match?.mutualReveal && match.otherName ? match.otherName : 'Mystery Match';
@@ -123,6 +136,9 @@ export default function ChatScreen() {
         />
 
         <View style={styles.composer}>
+          {error || loadError ? (
+            <Text style={styles.error}>{error || loadError}</Text>
+          ) : null}
           <TextInput
             testID="chat-input"
             value={draft}
@@ -198,9 +214,11 @@ const styles = StyleSheet.create({
   emptySub: { ...typography.body, color: colors.knookMidGrey, textAlign: 'center' },
   composer: {
     flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm,
+    flexWrap: 'wrap',
     padding: spacing.md, backgroundColor: colors.white,
     borderTopColor: colors.knookLightGrey, borderTopWidth: 1,
   },
+  error: { ...typography.caption, color: '#B91C1C', width: '100%' },
   input: {
     flex: 1, ...typography.body, color: colors.knookDark,
     backgroundColor: colors.knookLightGrey, borderRadius: radius.lg,

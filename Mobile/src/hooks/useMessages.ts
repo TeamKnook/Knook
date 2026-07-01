@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { firestoreService } from '@/src/services/firestore/firestoreService';
 import type { Match, Message } from '@/src/models';
+import { diagnostics } from '@/src/utils/diagnostics';
 
 export function useMessages(matchId: string | undefined) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [match, setMatch] = useState<Match | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const mounted = useRef(true);
 
   const refresh = useCallback(async () => {
@@ -18,8 +20,11 @@ export function useMessages(matchId: string | undefined) {
       if (!mounted.current) return;
       setMatch(m);
       setMessages(msgs);
-    } catch {
+      setError(null);
+    } catch (err) {
+      diagnostics.error('messages-refresh-failed', err, { matchId });
       // match may not be active yet
+      if (mounted.current) setError(err instanceof Error ? err.message : 'Could not load chat');
     } finally {
       if (mounted.current) setLoading(false);
     }
@@ -45,5 +50,5 @@ export function useMessages(matchId: string | undefined) {
     [matchId, refresh],
   );
 
-  return { match, messages, loading, send, refresh };
+  return { match, messages, loading, error, send, refresh };
 }
