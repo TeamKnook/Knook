@@ -6,16 +6,24 @@ import { ScreenContainer, PrimaryButton, GhostButton, KnookCard } from '@/src/co
 import { firestoreService } from '@/src/services/firestore/firestoreService';
 import type { Match } from '@/src/models';
 import { colors, radius, spacing, typography } from '@/src/theme';
+import { diagnostics } from '@/src/utils/diagnostics';
 
 export default function RevealScreen() {
   const router = useRouter();
   const { matchId } = useLocalSearchParams<{ matchId: string }>();
   const [match, setMatch] = useState<Match | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const refresh = async () => {
     if (!matchId) return;
-    setMatch(await firestoreService.getMatch(matchId));
+    try {
+      setMatch(await firestoreService.getMatch(matchId));
+      setError(null);
+    } catch (err) {
+      diagnostics.error('reveal-refresh-failed', err, { matchId });
+      setError(err instanceof Error ? err.message : 'Could not load reveal state');
+    }
   };
 
   useEffect(() => {
@@ -31,6 +39,10 @@ export default function RevealScreen() {
       setSubmitting(true);
       const updated = await firestoreService.reveal(matchId);
       setMatch(updated);
+      setError(null);
+    } catch (err) {
+      diagnostics.error('reveal-submit-failed', err, { matchId });
+      setError(err instanceof Error ? err.message : 'Could not reveal');
     } finally {
       setSubmitting(false);
     }
@@ -40,6 +52,7 @@ export default function RevealScreen() {
     return (
       <ScreenContainer testID="reveal-screen-loading">
         <Text style={styles.loading}>Loading…</Text>
+        {error ? <Text style={styles.error}>{error}</Text> : null}
       </ScreenContainer>
     );
   }
@@ -83,6 +96,7 @@ export default function RevealScreen() {
       </KnookCard>
 
       <View style={styles.actions}>
+        {error ? <Text style={styles.error}>{error}</Text> : null}
         {!iRevealed ? (
           <PrimaryButton
             testID="reveal-confirm-button"
@@ -119,6 +133,7 @@ function StateRow({ label, on, highlight }: { label: string; on: boolean; highli
 
 const styles = StyleSheet.create({
   loading: { ...typography.body, color: colors.knookMidGrey, paddingTop: spacing.xl, textAlign: 'center' },
+  error: { ...typography.caption, color: '#B91C1C', textAlign: 'center', marginTop: spacing.md },
   heroWrap: { alignItems: 'center', paddingTop: spacing.xl, gap: spacing.sm },
   heroIcon: {
     width: 72, height: 72, borderRadius: 36,

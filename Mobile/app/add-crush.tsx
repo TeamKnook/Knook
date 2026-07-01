@@ -1,22 +1,54 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, Stack } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { ScreenContainer, SectionHeader, TextInputField, GhostButton } from '@/src/components';
 import { contactsService, type ContactEntry } from '@/src/services/contacts/contactsService';
 import { firestoreService } from '@/src/services/firestore/firestoreService';
 import { colors, radius, spacing, typography } from '@/src/theme';
+import { diagnostics } from '@/src/utils/diagnostics';
 
 export default function AddCrushScreen() {
   const router = useRouter();
+  const mounted = useRef(true);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [contacts, setContacts] = useState<ContactEntry[]>([]);
   const [query, setQuery] = useState('');
   const [adding, setAdding] = useState<string | null>(null);
   const [added, setAdded] = useState<Record<string, 'pending' | 'matched'>>({});
   const [toast, setToast] = useState<string | null>(null);
 
+  const showToast = (message: string) => {
+    if (!mounted.current) return;
+    setToast(message);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => {
+      if (mounted.current) setToast(null);
+    }, 2200);
+  };
+
   useEffect(() => {
-    void contactsService.loadContacts().then(setContacts);
+    diagnostics.log('add-crush-enter');
+    mounted.current = true;
+
+    void contactsService.loadContacts()
+      .then((loaded) => {
+        diagnostics.log('add-crush-contacts-loaded', {
+          count: loaded.length,
+          sampleKeys: loaded[0] ? Object.keys(loaded[0]) : [],
+        });
+        if (mounted.current) setContacts(loaded);
+      })
+      .catch((error) => {
+        diagnostics.error('add-crush-contacts-load-failed', error);
+        showToast('Could not load contacts');
+      });
+
+    return () => {
+      diagnostics.log('add-crush-exit');
+      mounted.current = false;
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    };
   }, []);
 
   const filtered = useMemo(() => {
@@ -29,28 +61,37 @@ export default function AddCrushScreen() {
     });
   }, [contacts, query]);
 
+  useEffect(() => {
+    diagnostics.log('add-crush-list-render', { contacts: contacts.length, filtered: filtered.length });
+  }, [contacts.length, filtered.length]);
+
   const onAdd = async (c: ContactEntry) => {
     try {
+      diagnostics.log('add-crush-select', { contactId: c.id, hasPhone: !!c.phone });
       setAdding(c.id);
       const res = await firestoreService.addCrush(c.phone);
+      if (!mounted.current) return;
       setAdded((prev) => ({ ...prev, [c.id]: res.status === 'matched' ? 'matched' : 'pending' }));
-      setToast(
+      showToast(
         res.status === 'matched'
           ? "It's mutual! Reveal is held until 6:30 PM IST."
           : 'Crush added secretly.',
       );
-      setTimeout(() => setToast(null), 2200);
     } catch (e: unknown) {
-      setToast(e instanceof Error ? e.message : 'Could not add');
-      setTimeout(() => setToast(null), 2200);
+      diagnostics.error('add-crush-submit-failed', e, { contactId: c.id });
+      showToast(e instanceof Error ? e.message : 'Could not add');
     } finally {
-      setAdding(null);
+      if (mounted.current) setAdding(null);
     }
+  };
+
+  const onDone = () => {
+    diagnostics.log('add-crush-done');
+    router.replace('/(tabs)/crushes');
   };
 
   return (
     <ScreenContainer testID="add-crush-screen">
-      <Stack.Screen options={{ presentation: 'modal' }} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}
@@ -71,9 +112,11 @@ export default function AddCrushScreen() {
         </View>
 
         <FlatList
+          style={styles.listWrap}
           data={filtered}
           keyExtractor={(c) => c.id}
           contentContainerStyle={styles.list}
+          keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => {
             const status = added[item.id];
             return (
@@ -101,7 +144,7 @@ export default function AddCrushScreen() {
         />
 
         <View style={styles.footer}>
-          <GhostButton testID="add-crush-close-button" label="Done" onPress={() => router.back()} />
+          <GhostButton testID="add-crush-close-button" label="Done" onPress={onDone} />
         </View>
 
         {toast ? (
@@ -117,7 +160,8 @@ export default function AddCrushScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: { gap: spacing.md, paddingTop: spacing.md },
-  list: { paddingTop: spacing.md, gap: spacing.sm, paddingBottom: spacing.xl },
+  listWrap: { flex: 1 },
+  list: { flexGrow: 1, paddingTop: spacing.md, gap: spacing.sm, paddingBottom: spacing.xl },
   row: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     padding: spacing.md, backgroundColor: colors.white,

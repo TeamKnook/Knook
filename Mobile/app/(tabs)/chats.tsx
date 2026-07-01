@@ -5,14 +5,19 @@ import { ScreenContainer, SectionHeader, EmptyState, GhostButton } from '@/src/c
 import { useMatches } from '@/src/hooks/useMatches';
 import { firestoreService } from '@/src/services/firestore/firestoreService';
 import { colors, radius, spacing, typography } from '@/src/theme';
+import { diagnostics } from '@/src/utils/diagnostics';
 
 export default function ChatsScreen() {
   const router = useRouter();
-  const { matches, loading, refresh } = useMatches();
+  const { matches, loading, error, refresh } = useMatches();
 
   const triggerReveal = async () => {
-    await firestoreService.triggerDailyReveal();
-    await refresh();
+    try {
+      await firestoreService.triggerDailyReveal();
+      await refresh();
+    } catch (err) {
+      diagnostics.error('dev-trigger-reveal-failed', err);
+    }
   };
 
   return (
@@ -23,9 +28,11 @@ export default function ChatsScreen() {
           title="Chats"
           subtitle="Mystery matches stay anonymous until you both choose to reveal."
         />
+        {error ? <Text style={styles.error}>{error}</Text> : null}
       </View>
 
       <FlatList
+        style={styles.listWrap}
         data={matches}
         keyExtractor={(m) => m.matchId}
         contentContainerStyle={styles.list}
@@ -82,7 +89,9 @@ export default function ChatsScreen() {
 
 const styles = StyleSheet.create({
   headerWrap: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, gap: spacing.sm },
+  listWrap: { flex: 1 },
+  list: { flexGrow: 1, paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, gap: spacing.sm },
+  error: { ...typography.caption, color: '#B91C1C', marginTop: spacing.sm },
   row: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     padding: spacing.md, backgroundColor: colors.white,

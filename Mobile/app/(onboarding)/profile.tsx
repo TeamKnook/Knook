@@ -80,7 +80,12 @@ export default function ProfileSetup() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}
       >
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+        <ScrollView
+          style={styles.flex}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.scroll}
+        >
           <SectionHeader
             eyebrow="One last thing"
             title="Tell us about you"
@@ -129,7 +134,7 @@ export default function ProfileSetup() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  scroll: { paddingTop: spacing.lg, paddingBottom: spacing.xl, gap: spacing.lg },
+  scroll: { flexGrow: 1, paddingTop: spacing.lg, paddingBottom: spacing.xl, gap: spacing.lg },
   row: { flexDirection: 'row', gap: spacing.md },
   flex1: { flex: 1 },
   flex2: { flex: 2 },

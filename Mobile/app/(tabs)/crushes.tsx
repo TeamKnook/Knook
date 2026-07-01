@@ -9,7 +9,7 @@ import { formatCountdown, nextRevealAt } from '@/src/utils/timeUtils';
 
 export default function CrushesScreen() {
   const router = useRouter();
-  const { crushes, loading, refresh } = useCrushes();
+  const { crushes, loading, error, refresh } = useCrushes();
   const [now, setNow] = useState(Date.now());
 
   const target = useMemo(() => nextRevealAt().getTime(), []);
@@ -52,9 +52,12 @@ export default function CrushesScreen() {
             <Text style={styles.statLabel}>Matched</Text>
           </View>
         </View>
+
+        {error ? <Text style={styles.error}>{error}</Text> : null}
       </View>
 
       <FlatList
+        style={styles.listWrap}
         data={crushes}
         keyExtractor={(item) => item.phoneHash}
         contentContainerStyle={styles.listContent}
@@ -112,6 +115,7 @@ export default function CrushesScreen() {
 
 const styles = StyleSheet.create({
   headerWrap: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.md },
+  listWrap: { flex: 1 },
   countdownCard: { backgroundColor: colors.knookPurple, borderColor: colors.knookPurple },
   countdownRow: { flexDirection: 'row', alignItems: 'center' },
   countdownEyebrow: { ...typography.eyebrow, color: colors.knookYellow, textTransform: 'uppercase' },
@@ -123,7 +127,8 @@ const styles = StyleSheet.create({
   },
   statNumber: { ...typography.h1, color: colors.knookDark },
   statLabel: { ...typography.caption, color: colors.knookMidGrey, textTransform: 'uppercase' },
-  listContent: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: 120, gap: spacing.sm },
+  error: { ...typography.caption, color: '#B91C1C' },
+  listContent: { flexGrow: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: 120, gap: spacing.sm },
   row: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     paddingVertical: spacing.md, paddingHorizontal: spacing.md,

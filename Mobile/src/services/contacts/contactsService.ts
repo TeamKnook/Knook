@@ -1,3 +1,5 @@
+import { diagnostics } from '@/src/utils/diagnostics';
+
 /**
  * Contacts service.
  *
@@ -18,6 +20,9 @@ export interface ContactEntry {
 }
 
 const MOCK_CONTACTS: ContactEntry[] = [
+  { id: 'demo-us-1', name: 'Demo Contact One', phone: '+15555550101' },
+  { id: 'demo-us-2', name: 'Demo Contact Two', phone: '+15555550102' },
+  { id: 'demo-us-3', name: 'Demo Contact Three', phone: '+15555550103' },
   { id: 'c1', name: 'Aarav Mehta', phone: '+919812345601' },
   { id: 'c2', name: 'Priya Sharma', phone: '+919812345602' },
   { id: 'c3', name: 'Rohan Iyer', phone: '+919812345603' },
@@ -30,10 +35,30 @@ const MOCK_CONTACTS: ContactEntry[] = [
   { id: 'c10', name: 'Neel Kapoor', phone: '+919812345610' },
 ];
 
+export function sanitizeContactsForPreview(input: unknown): ContactEntry[] {
+  if (!Array.isArray(input)) return [];
+
+  const seen = new Set<string>();
+  return input.flatMap((item, index) => {
+    if (!item || typeof item !== 'object') return [];
+    const raw = item as Partial<ContactEntry>;
+    const phone = typeof raw.phone === 'string' ? raw.phone.trim() : '';
+    if (!phone) return [];
+    const fallbackId = `contact-${index}-${phone.replace(/\D/g, '').slice(-8)}`;
+    const id = typeof raw.id === 'string' && raw.id.trim() ? raw.id.trim() : fallbackId;
+    if (seen.has(id)) return [];
+    seen.add(id);
+    const name = typeof raw.name === 'string' && raw.name.trim() ? raw.name.trim() : 'Unknown';
+    return [{ id, name, phone }];
+  });
+}
+
 export const contactsService = {
   async loadContacts(): Promise<ContactEntry[]> {
     // TODO(real-device): use loadDeviceContacts() once expo-contacts is wired.
-    return MOCK_CONTACTS;
+    const contacts = sanitizeContactsForPreview(MOCK_CONTACTS);
+    diagnostics.log('contacts-preview-loaded', { count: contacts.length });
+    return contacts;
   },
 
   /**
@@ -46,6 +71,7 @@ export const contactsService = {
       // eslint-disable-next-line import/no-unresolved
       const Contacts = await import('expo-contacts');
       const { status } = await Contacts.requestPermissionsAsync();
+      diagnostics.log('contacts-permission-result', { status });
       if (status !== 'granted') return [];
       const { data } = await Contacts.getContactsAsync({
         fields: [Contacts.Fields.PhoneNumbers],
@@ -56,9 +82,14 @@ export const contactsService = {
           if (p.number) flat.push({ id: `${c.id ?? ''}-${idx}`, name: c.name ?? 'Unknown', phone: p.number });
         });
       });
-      return flat;
-    } catch {
-      return MOCK_CONTACTS;
+      const contacts = sanitizeContactsForPreview(flat);
+      diagnostics.log('contacts-device-loaded', { count: contacts.length });
+      return contacts;
+    } catch (error) {
+      diagnostics.error('contacts-device-load-failed', error);
+      const contacts = sanitizeContactsForPreview(MOCK_CONTACTS);
+      diagnostics.log('contacts-preview-fallback-loaded', { count: contacts.length });
+      return contacts;
     }
   },
 };
