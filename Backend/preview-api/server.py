@@ -9,6 +9,7 @@ from fastapi import FastAPI, APIRouter, HTTPException, Header, Depends
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo.errors import DuplicateKeyError
 import jwt
 import os
 import logging
@@ -32,6 +33,10 @@ DEMO_OTP_CODE = os.environ.get("DEMO_OTP_CODE")
 JWT_SECRET = os.environ.get("JWT_SECRET")
 JWT_ALGORITHM = "HS256"
 JWT_TTL_HOURS = 12
+TWO_USER_DEMO_PHONES = {
+    "USER_A": "+15555550100",
+    "USER_B": "+15555550101",
+}
 
 app = FastAPI(title="Knook MVP backend")
 api = APIRouter(prefix="/api")
@@ -59,6 +64,27 @@ def normalize_phone(raw: str) -> str:
 
 def sha256(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+TWO_USER_DEMO_HASHES = {
+    sha256(normalize_phone(phone)): alias
+    for alias, phone in TWO_USER_DEMO_PHONES.items()
+}
+
+
+def demo_alias_for_user(user: Optional[dict]) -> str:
+    if not user:
+        return "UNKNOWN"
+    return TWO_USER_DEMO_HASHES.get(user.get("phoneHash"), "USER")
+
+
+def demo_alias_for_phone_hash(phone_hash: Optional[str]) -> str:
+    return TWO_USER_DEMO_HASHES.get(phone_hash or "", "UNKNOWN")
+
+
+def log_demo_event(prefix: str, message: str, **fields) -> None:
+    safe_fields = " ".join(f"{key}={value}" for key, value in fields.items() if value is not None)
+    logger.info("%s %s%s", prefix, message, f" {safe_fields}" if safe_fields else "")
 
 
 def require_demo_mode() -> None:
@@ -202,6 +228,11 @@ async def verify_otp(body: VerifyOtpIn):
     phone_last4 = re.sub(r"\D", "", phone)[-4:]
     existing = await db.users.find_one({"phoneHash": phone_hash}, {"_id": 0})
     if existing:
+        log_demo_event(
+            f"[{demo_alias_for_user(existing)}]",
+            "auth verified existing user",
+            uid=existing["uid"],
+        )
         return AuthOut(
             token=create_session_token(existing["uid"]),
             uid=existing["uid"],
@@ -219,6 +250,11 @@ async def verify_otp(body: VerifyOtpIn):
         "updatedAt": now(),
     }
     await db.users.insert_one(user_doc)
+    log_demo_event(
+        f"[{demo_alias_for_user(user_doc)}]",
+        "auth created user",
+        uid=uid,
+    )
     return AuthOut(token=create_session_token(uid), uid=uid, onboardingCompleted=False)
 
 
@@ -235,6 +271,7 @@ async def update_me(body: ProfileIn, user=Depends(current_user)):
     update = {k: v for k, v in body.model_dump().items() if v is not None}
     update["updatedAt"] = now()
     await db.users.update_one({"uid": user["uid"]}, {"$set": update})
+    log_demo_event(f"[{demo_alias_for_user(user)}]", "profile updated", uid=user["uid"])
     updated = await db.users.find_one({"uid": user["uid"]}, {"_id": 0})
     updated["createdAt"] = iso(updated.get("createdAt"))
     updated["updatedAt"] = iso(updated.get("updatedAt"))
@@ -262,12 +299,14 @@ async def _detect_mutual(uid: str, target_phone_hash: str, my_phone_hash: str):
     if not reverse:
         return None
 
-    match_id = str(uuid.uuid4())
+    participants = sorted([uid, target["uid"]])
+    match_id = "_".join(participants)
     match_doc = {
+        "_id": match_id,
         "matchId": match_id,
         "userA": uid,
         "userB": target["uid"],
-        "participants": sorted([uid, target["uid"]]),
+        "participants": participants,
         "status": "pending_reveal",
         "matchedAt": now(),
         "revealedAt": None,
@@ -280,7 +319,17 @@ async def _detect_mutual(uid: str, target_phone_hash: str, my_phone_hash: str):
         "createdAt": now(),
         "updatedAt": now(),
     }
-    await db.matches.insert_one(match_doc)
+    try:
+        await db.matches.insert_one(match_doc)
+        log_demo_event(
+            "[MATCH]",
+            "created pending_reveal match",
+            matchId=match_id,
+            userA=demo_alias_for_phone_hash(my_phone_hash),
+            userB=demo_alias_for_phone_hash(target_phone_hash),
+        )
+    except DuplicateKeyError:
+        log_demo_event("[MATCH]", "deduplicated reciprocal crush", matchId=match_id)
     # Stamp matchId + status on both crush docs
     await db.crushes.update_one(
         {"uid": uid, "phoneHash": target_phone_hash},
@@ -307,6 +356,13 @@ async def add_crush(body: CrushIn, user=Depends(current_user)):
         {"uid": user["uid"], "phoneHash": phone_hash}, {"_id": 0}
     )
     if existing and existing.get("status") in ("pending", "matched"):
+        log_demo_event(
+            f"[{demo_alias_for_user(user)}]",
+            "duplicate crush returned existing",
+            target=demo_alias_for_phone_hash(phone_hash),
+            status=existing.get("status"),
+            matchId=existing.get("matchId"),
+        )
         return await _serialize_crush(existing)
 
     crush_doc = {
@@ -330,6 +386,13 @@ async def add_crush(body: CrushIn, user=Depends(current_user)):
     await _detect_mutual(user["uid"], phone_hash, user["phoneHash"])
     fresh = await db.crushes.find_one(
         {"uid": user["uid"], "phoneHash": phone_hash}, {"_id": 0}
+    )
+    log_demo_event(
+        f"[{demo_alias_for_user(user)}]",
+        "crush saved",
+        target=demo_alias_for_phone_hash(phone_hash),
+        status=fresh.get("status") if fresh else None,
+        matchId=fresh.get("matchId") if fresh else None,
     )
     return await _serialize_crush(fresh)
 
@@ -394,6 +457,13 @@ async def reveal(match_id: str, user=Depends(current_user)):
             "updatedAt": now(),
         }},
     )
+    log_demo_event(
+        "[REVEAL]",
+        "identity reveal updated",
+        matchId=match_id,
+        user=demo_alias_for_user(user),
+        mutual=mutual,
+    )
     fresh = await db.matches.find_one({"matchId": match_id}, {"_id": 0})
     return await _serialize_match(fresh, user["uid"])
 
@@ -417,6 +487,7 @@ async def unhook(match_id: str, user=Depends(current_user)):
         {"matchId": match_id},
         {"$set": {"status": "unhooked", "updatedAt": now()}},
     )
+    log_demo_event("[UNHOOK]", "match unhooked", matchId=match_id, user=demo_alias_for_user(user))
     return {"ok": True}
 
 
@@ -459,6 +530,13 @@ async def send_message(match_id: str, body: MessageIn, user=Depends(current_user
         "deletedAt": None,
     }
     await db.messages.insert_one(msg)
+    log_demo_event(
+        "[CHAT]",
+        "message sent",
+        matchId=match_id,
+        messageId=msg["messageId"],
+        sender=demo_alias_for_user(user),
+    )
     msg.pop("_id", None)
     update = {
         "lastMessageAt": msg["sentAt"],
@@ -491,6 +569,12 @@ async def trigger_reveal(user=Depends(current_user)):
             "matchExpiresAt": expires_at,
             "updatedAt": revealed_at,
         }},
+    )
+    log_demo_event(
+        "[REVEAL]",
+        "local development reveal triggered",
+        user=demo_alias_for_user(user),
+        updated=res.modified_count,
     )
     # TODO: send FCM push notification to participants
     return {"updated": res.modified_count}
