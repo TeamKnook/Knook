@@ -1,8 +1,8 @@
 # Two-User Local Test Report
 
-Status: prepared, partially validated by Codex, not yet fully manually executed on two simulators.
+Status: main two-user local flow passed on two iOS Simulators.
 
-Codex could inspect and validate code paths, but could not control two iOS Simulator windows from the sandbox. Manual device execution should follow `Scripts/two-device-simulation.md` and this report should be updated with observed pass/fail results.
+Codex inspected and validated code paths, while the human tester executed the two-simulator flow manually because Codex cannot control two iOS Simulator windows from the sandbox.
 
 ## Branches
 
@@ -32,16 +32,16 @@ Codex could inspect and validate code paths, but could not control two iOS Simul
 
 | Step | Simulator A | Simulator B | Backend state | Latency | Status |
 | --- | --- | --- | --- | --- | --- |
-| USER_A signs in | Pending manual run | N/A | Should create or reuse `demo-user-a` | N/A | Not run |
-| USER_B signs in | N/A | Pending manual run | Should create or reuse `demo-user-b` | N/A | Not run |
-| USER_A adds USER_B | Pending manual run | N/A | One pending crush for USER_A | N/A | Not run |
-| USER_B adds USER_A | N/A | Pending manual run | One deterministic `pending_reveal` match | N/A | Not run |
-| Match hidden before reveal | Pending manual run | Pending manual run | `/matches` should be empty | Up to 6s | Not run |
-| Development reveal | Pending manual run | Pending manual run | Match becomes `active` | Up to 6s | Not run |
-| Anonymous chat | Pending manual run | Pending manual run | Messages inserted under match ID | Up to 3s | Not run |
-| USER_A reveal | Pending manual run | Pending manual run | `revealedBy` contains USER_A | Up to 4s | Not run |
-| USER_B reveal | Pending manual run | Pending manual run | `mutualReveal=true` | Up to 4s | Not run |
-| Unhook | Pending manual run | Pending manual run | Match unhooked, messages inaccessible | Up to 6s | Not run |
+| USER_A signs in | Alex signed in on iPhone 17 Pro | N/A | Reused seeded `demo-user-a` | Immediate | Passed |
+| USER_B signs in | N/A | Jordan signed in on iPhone 17 Pro Max | Reused seeded `demo-user-b` | Immediate | Passed |
+| USER_A adds USER_B | Jordan Demo added as pending crush | N/A | One pending crush for USER_A | Immediate | Passed |
+| USER_B adds USER_A | N/A | Alex Demo added and shown as matched | One deterministic `pending_reveal` match | Immediate | Passed with product note |
+| Match hidden before reveal | Chats empty | Chats empty | `/matches` hidden until active | Observed after navigation | Passed |
+| Development reveal | Mystery Match appeared | Mystery Match appeared | Match became `active` | A few seconds | Passed |
+| Anonymous chat | Received Jordan reply; header stayed anonymous | Received Alex message; header stayed anonymous | Messages inserted under match ID | A few seconds | Passed |
+| USER_A reveal | Showed `You revealed`; waiting state | Showed `They revealed first`; names still hidden | `revealedBy` contains USER_A | A few seconds | Passed |
+| USER_B reveal | Saw Jordan's name after mutual reveal | Saw Alex's name after mutual reveal | `mutualReveal=true` | A few seconds | Passed |
+| Unhook | Exited chat after confirming unhook | Lost access and chat disappeared after refresh | Match unhooked, messages inaccessible from UI | A few seconds | Passed |
 
 ## Edge-Case Results
 
@@ -95,6 +95,7 @@ Intended production behavior:
 
 | Issue | Severity | Recommended fix |
 | --- | --- | --- |
+| Crushes screen shows `matched` immediately after the reciprocal crush, before the 6:30 PM reveal | High for product privacy | Keep backend `pending_reveal`, but mask crush row status as pending/waiting until reveal time in the mobile UI and production data model. |
 | Codex sandbox could not enumerate iOS Simulators because CoreSimulator service access/logging was blocked | Low | Run simulator commands from normal Terminal. |
 | Codex sandbox could not connect to local MongoDB, returning `connect EPERM 127.0.0.1:27017` | Low | Run live preview API tests from normal Terminal where local network access is allowed. |
 | Expo Go cannot test real contact permission behavior | Medium | Use mocked contacts for preview; test real contacts later in Expo Development Build. |
@@ -119,7 +120,7 @@ Not completed by Codex because local MongoDB and CoreSimulator access are blocke
 | Check | Result |
 | --- | --- |
 | Full preview API tests against `http://127.0.0.1:8000` | Blocked in sandbox; run from normal Terminal |
-| Two-simulator manual flow | Pending human run |
+| Two-simulator manual flow | Passed by human tester on iPhone 17 Pro and iPhone 17 Pro Max |
 
 Run these from a normal Terminal to complete validation:
 
