@@ -41,13 +41,27 @@ The fix is to derive a privacy-safe display state on mobile: a raw matched crush
 | USER_A signs in | Alex signed in on iPhone 17 Pro | N/A | Reused seeded `demo-user-a` | Immediate | Passed |
 | USER_B signs in | N/A | Jordan signed in on iPhone 17 Pro Max | Reused seeded `demo-user-b` | Immediate | Passed |
 | USER_A adds USER_B | Jordan Demo added as pending crush | N/A | One pending crush for USER_A | Immediate | Passed |
-| USER_B adds USER_A | N/A | Alex Demo was previously shown as matched before this privacy fix | One deterministic `pending_reveal` match | Immediate | Passed with resolved product note |
+| USER_B adds USER_A | Still showed `Private: 1`, `Matched: 0`, and `Added privately` | Still showed `Private: 1`, `Matched: 0`, and `Added privately` | One deterministic `pending_reveal` match | Immediate plus polling refresh | Passed after privacy fix |
 | Match hidden before reveal | Chats empty | Chats empty | `/matches` hidden until active | Observed after navigation | Passed |
 | Development reveal | Mystery Match appeared | Mystery Match appeared | Match became `active` | A few seconds | Passed |
 | Anonymous chat | Received Jordan reply; header stayed anonymous | Received Alex message; header stayed anonymous | Messages inserted under match ID | A few seconds | Passed |
 | USER_A reveal | Showed `You revealed`; waiting state | Showed `They revealed first`; names still hidden | `revealedBy` contains USER_A | A few seconds | Passed |
 | USER_B reveal | Saw Jordan's name after mutual reveal | Saw Alex's name after mutual reveal | `mutualReveal=true` | A few seconds | Passed |
 | Unhook | Exited chat after confirming unhook | Lost access and chat disappeared after refresh | Match unhooked, messages inaccessible from UI | A few seconds | Passed |
+
+## Pre-Reveal Privacy Re-Test
+
+Re-tested on July 2, 2026 using iPhone 17 Pro and iPhone 17 Pro Max simulators after commit `e457fe3`.
+
+| Check | Result |
+| --- | --- |
+| USER_A adds USER_B | Passed: USER_A saw `Added privately`, `Private: 1`, `Matched: 0`. |
+| USER_B adds USER_A | Passed: both users still saw `Added privately`, `Private: 1`, `Matched: 0`. |
+| Pre-reveal Chats | Passed: both Chats tabs stayed empty. |
+| Demo reveal | Passed: both users saw Mystery Match after reveal. |
+| Post-reveal Crushes | Passed: `Matched: 1` appeared only after reveal activation. |
+| Anonymous chat | Passed: chat still worked after reveal. |
+| Unhook | Passed: initiating user exited chat; other user lost access after refresh; both Chats tabs became empty. |
 
 ## Edge-Case Results
 
