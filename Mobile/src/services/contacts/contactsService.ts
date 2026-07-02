@@ -20,7 +20,8 @@ export interface ContactEntry {
 }
 
 const MOCK_CONTACTS: ContactEntry[] = [
-  { id: 'demo-us-1', name: 'Demo Contact One', phone: '+15555550101' },
+  { id: 'demo-us-0', name: 'Alex Demo', phone: '+15555550100' },
+  { id: 'demo-us-1', name: 'Jordan Demo', phone: '+15555550101' },
   { id: 'demo-us-2', name: 'Demo Contact Two', phone: '+15555550102' },
   { id: 'demo-us-3', name: 'Demo Contact Three', phone: '+15555550103' },
   { id: 'c1', name: 'Aarav Mehta', phone: '+919812345601' },
