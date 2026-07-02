@@ -23,6 +23,7 @@ After the match becomes active, users chat anonymously. Either person may choose
 - Raw contact names must remain on-device.
 - Phone numbers should be normalized and hashed for matching.
 - Mutual matches must remain hidden before 6:30 PM IST.
+- A `pending_reveal` match must be indistinguishable from a one-sided crush in all user-facing UI.
 - Anonymous chat must never show identifying information before mutual reveal.
 - Push notifications must not reveal identity.
 - Reveal must remain voluntary.

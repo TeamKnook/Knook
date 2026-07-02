@@ -4,12 +4,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { ScreenContainer, SectionHeader, EmptyState, PrimaryButton, KnookCard } from '@/src/components';
 import { useCrushes } from '@/src/hooks/useCrushes';
+import { useMatches } from '@/src/hooks/useMatches';
 import { colors, radius, spacing, typography } from '@/src/theme';
+import { activeMatchIds, getCrushDisplayModel } from '@/src/utils/crushPrivacy';
 import { formatCountdown, nextRevealAt } from '@/src/utils/timeUtils';
 
 export default function CrushesScreen() {
   const router = useRouter();
   const { crushes, loading, error, refresh } = useCrushes();
+  const { matches, refresh: refreshMatches } = useMatches();
   const [now, setNow] = useState(Date.now());
 
   const target = useMemo(() => nextRevealAt().getTime(), []);
@@ -18,8 +21,16 @@ export default function CrushesScreen() {
     return () => clearInterval(id);
   }, []);
 
-  const pending = crushes.filter((c) => c.status === 'pending').length;
-  const matched = crushes.filter((c) => c.status === 'matched').length;
+  const visibleActiveMatchIds = useMemo(() => activeMatchIds(matches), [matches]);
+  const displayRows = useMemo(
+    () => crushes.map((crush) => ({ crush, display: getCrushDisplayModel(crush, visibleActiveMatchIds) })),
+    [crushes, visibleActiveMatchIds],
+  );
+  const privateCount = displayRows.filter((row) => row.display.state === 'private').length;
+  const matched = displayRows.filter((row) => row.display.isMatched).length;
+  const refreshAll = async () => {
+    await Promise.all([refresh(), refreshMatches()]);
+  };
 
   return (
     <ScreenContainer testID="crushes-screen">
@@ -44,8 +55,8 @@ export default function CrushesScreen() {
 
         <View style={styles.statsRow}>
           <View style={styles.stat}>
-            <Text style={styles.statNumber} testID="stat-pending">{pending}</Text>
-            <Text style={styles.statLabel}>Pending</Text>
+            <Text style={styles.statNumber} testID="stat-private">{privateCount}</Text>
+            <Text style={styles.statLabel}>Private</Text>
           </View>
           <View style={styles.stat}>
             <Text style={styles.statNumber} testID="stat-matched">{matched}</Text>
@@ -58,10 +69,10 @@ export default function CrushesScreen() {
 
       <FlatList
         style={styles.listWrap}
-        data={crushes}
-        keyExtractor={(item) => item.phoneHash}
+        data={displayRows}
+        keyExtractor={(item) => item.crush.phoneHash}
         contentContainerStyle={styles.listContent}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor={colors.knookPurple} />}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={refreshAll} tintColor={colors.knookPurple} />}
         ListEmptyComponent={
           !loading ? (
             <EmptyState
@@ -78,28 +89,25 @@ export default function CrushesScreen() {
             </EmptyState>
           ) : null
         }
-        renderItem={({ item }) => (
-          <View testID={`crush-row-${item.phoneHash.slice(0, 6)}`} style={styles.row}>
-            <View style={styles.avatar}>
-              <Ionicons
-                name={item.status === 'matched' ? 'heart' : 'heart-outline'}
-                size={20}
-                color={item.status === 'matched' ? colors.knookYellow : colors.knookPurple}
-              />
+        renderItem={({ item }) => {
+          const { crush, display } = item;
+          return (
+            <View testID={`crush-row-${crush.phoneHash.slice(0, 6)}`} style={styles.row}>
+              <View style={styles.avatar}>
+                <Ionicons
+                  name={display.isMatched ? 'heart' : 'heart-outline'}
+                  size={20}
+                  color={display.isMatched ? colors.knookYellow : colors.knookPurple}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowTitle}>{display.title} · •••• {crush.phoneLast4 || '—'}</Text>
+                <Text style={styles.rowSubtitle}>{display.subtitle}</Text>
+              </View>
+              <Text style={styles.rowBadge}>{display.badge}</Text>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.rowTitle}>Crush · •••• {item.phoneLast4 || '—'}</Text>
-              <Text style={styles.rowSubtitle}>
-                {item.status === 'matched'
-                  ? 'Matched — wait for reveal'
-                  : item.status === 'pending'
-                  ? 'Waiting for them to crush back'
-                  : item.status}
-              </Text>
-            </View>
-            <Text style={styles.rowBadge}>{item.status}</Text>
-          </View>
-        )}
+          );
+        }}
       />
 
       <Pressable

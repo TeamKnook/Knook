@@ -15,7 +15,7 @@ export default function AddCrushScreen() {
   const [contacts, setContacts] = useState<ContactEntry[]>([]);
   const [query, setQuery] = useState('');
   const [adding, setAdding] = useState<string | null>(null);
-  const [added, setAdded] = useState<Record<string, 'pending' | 'matched'>>({});
+  const [added, setAdded] = useState<Record<string, boolean>>({});
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (message: string) => {
@@ -69,14 +69,10 @@ export default function AddCrushScreen() {
     try {
       diagnostics.log('add-crush-select', { contactId: c.id, hasPhone: !!c.phone });
       setAdding(c.id);
-      const res = await firestoreService.addCrush(c.phone);
+      await firestoreService.addCrush(c.phone);
       if (!mounted.current) return;
-      setAdded((prev) => ({ ...prev, [c.id]: res.status === 'matched' ? 'matched' : 'pending' }));
-      showToast(
-        res.status === 'matched'
-          ? "It's mutual! Reveal is held until 6:30 PM IST."
-          : 'Crush added secretly.',
-      );
+      setAdded((prev) => ({ ...prev, [c.id]: true }));
+      showToast('Added privately.');
     } catch (e: unknown) {
       diagnostics.error('add-crush-submit-failed', e, { contactId: c.id });
       showToast(e instanceof Error ? e.message : 'Could not add');
@@ -100,7 +96,7 @@ export default function AddCrushScreen() {
           <SectionHeader
             eyebrow="Secret"
             title="Add a crush"
-            subtitle="Pick from your contacts. They'll only know if they crush you back."
+            subtitle="Pick someone privately. Daily reveal is the only time mutual matches appear."
           />
           <TextInputField
             testID="contacts-search-input"
@@ -118,7 +114,7 @@ export default function AddCrushScreen() {
           contentContainerStyle={styles.list}
           keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => {
-            const status = added[item.id];
+            const isAdded = !!added[item.id];
             return (
               <View testID={`contact-row-${item.id}`} style={styles.row}>
                 <View style={styles.avatar}>
@@ -130,12 +126,12 @@ export default function AddCrushScreen() {
                 </View>
                 <Pressable
                   testID={`add-crush-${item.id}`}
-                  disabled={!!status || adding === item.id}
+                  disabled={isAdded || adding === item.id}
                   onPress={() => onAdd(item)}
-                  style={[styles.action, status === 'matched' && styles.actionMatched, status === 'pending' && styles.actionPending]}
+                  style={[styles.action, isAdded && styles.actionPending]}
                 >
-                  <Text style={[styles.actionLabel, !!status && styles.actionLabelDone]}>
-                    {status === 'matched' ? 'Matched' : status === 'pending' ? 'Added' : 'Crush'}
+                  <Text style={[styles.actionLabel, isAdded && styles.actionLabelDone]}>
+                    {isAdded ? 'Added' : 'Crush'}
                   </Text>
                 </Pressable>
               </View>
@@ -178,7 +174,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill, backgroundColor: colors.knookPurple,
   },
   actionPending: { backgroundColor: colors.knookLightGrey },
-  actionMatched: { backgroundColor: colors.knookYellow },
   actionLabel: { ...typography.caption, color: colors.white, fontWeight: '700', textTransform: 'uppercase' },
   actionLabelDone: { color: colors.knookDark },
   footer: { paddingVertical: spacing.md },

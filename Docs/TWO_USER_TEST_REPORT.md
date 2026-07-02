@@ -28,6 +28,12 @@ Codex inspected and validated code paths, while the human tester executed the tw
 | Unhook | Sets match unhooked and soft-deletes messages | Implemented for preview | Other client loses access after polling refresh. |
 | Realtime updates | Mobile polls matches/crushes/messages | Temporary implementation | Firebase listeners will replace polling. |
 
+## Pre-Reveal Privacy Fix Root Cause
+
+The privacy leak came from the mobile Crushes UI trusting the raw crush document status. The preview backend stamps both users' crush records as `matched` as soon as it creates the hidden `pending_reveal` match. Chats stayed hidden because `/api/matches` only returns active matches, but the Crushes screen rendered `matched` labels, counts, icon styling, and copy directly from `crush.status`.
+
+The fix is to derive a privacy-safe display state on mobile: a raw matched crush remains `Added privately` unless its `matchId` is present in the visible active matches list.
+
 ## Main Flow Results
 
 | Step | Simulator A | Simulator B | Backend state | Latency | Status |
@@ -35,7 +41,7 @@ Codex inspected and validated code paths, while the human tester executed the tw
 | USER_A signs in | Alex signed in on iPhone 17 Pro | N/A | Reused seeded `demo-user-a` | Immediate | Passed |
 | USER_B signs in | N/A | Jordan signed in on iPhone 17 Pro Max | Reused seeded `demo-user-b` | Immediate | Passed |
 | USER_A adds USER_B | Jordan Demo added as pending crush | N/A | One pending crush for USER_A | Immediate | Passed |
-| USER_B adds USER_A | N/A | Alex Demo added and shown as matched | One deterministic `pending_reveal` match | Immediate | Passed with product note |
+| USER_B adds USER_A | N/A | Alex Demo was previously shown as matched before this privacy fix | One deterministic `pending_reveal` match | Immediate | Passed with resolved product note |
 | Match hidden before reveal | Chats empty | Chats empty | `/matches` hidden until active | Observed after navigation | Passed |
 | Development reveal | Mystery Match appeared | Mystery Match appeared | Match became `active` | A few seconds | Passed |
 | Anonymous chat | Received Jordan reply; header stayed anonymous | Received Alex message; header stayed anonymous | Messages inserted under match ID | A few seconds | Passed |
@@ -95,7 +101,7 @@ Intended production behavior:
 
 | Issue | Severity | Recommended fix |
 | --- | --- | --- |
-| Crushes screen shows `matched` immediately after the reciprocal crush, before the 6:30 PM reveal | High for product privacy | Keep backend `pending_reveal`, but mask crush row status as pending/waiting until reveal time in the mobile UI and production data model. |
+| Crushes screen showed `matched` immediately after the reciprocal crush, before the 6:30 PM reveal | High for product privacy | Resolved on `fix/pre-reveal-privacy`: raw matched crushes are displayed as `Added privately` unless their match is visible as `active`. |
 | Codex sandbox could not enumerate iOS Simulators because CoreSimulator service access/logging was blocked | Low | Run simulator commands from normal Terminal. |
 | Codex sandbox could not connect to local MongoDB, returning `connect EPERM 127.0.0.1:27017` | Low | Run live preview API tests from normal Terminal where local network access is allowed. |
 | Expo Go cannot test real contact permission behavior | Medium | Use mocked contacts for preview; test real contacts later in Expo Development Build. |
