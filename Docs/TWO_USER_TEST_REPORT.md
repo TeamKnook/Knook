@@ -63,6 +63,18 @@ Re-tested on July 2, 2026 using iPhone 17 Pro and iPhone 17 Pro Max simulators a
 | Anonymous chat | Passed: chat still worked after reveal. |
 | Unhook | Passed: initiating user exited chat; other user lost access after refresh; both Chats tabs became empty. |
 
+## Development Build Re-Test
+
+Re-tested on July 6, 2026 using `Knook Dev` custom iOS development builds on iPhone 17 Pro and iPhone 17 Pro Max simulators.
+
+| Check | Result |
+| --- | --- |
+| Expo Go dependency | Passed: both devices opened `Knook Dev`, not Expo Go. |
+| Shared local services | Passed: both devices connected to one Metro dev-client server and local preview API. |
+| Two-user product flow | Passed: sign-in, crush privacy, reveal, chat, mutual identity reveal, and unhook worked. |
+| Sign-out | Passed: sign-out returned both devices to the phone screen without freezing. |
+| Re-login | Passed: phone input started empty; Alex and Jordan re-signed in with seeded numbers and returned to main tabs rather than profile creation. |
+
 ## Edge-Case Results
 
 | Edge case | Expected current preview behavior | Status |

@@ -8,7 +8,7 @@ import { normalizePhone } from '@/src/utils/normalizePhone';
 
 export default function PhoneScreen() {
   const router = useRouter();
-  const [phone, setPhone] = useState('+91');
+  const [phone, setPhone] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,6 +49,7 @@ export default function PhoneScreen() {
           <TextInputField
             testID="phone-input"
             label="Phone number"
+            placeholder="Include country code"
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"

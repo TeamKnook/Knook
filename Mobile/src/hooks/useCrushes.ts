@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { firestoreService } from '@/src/services/firestore/firestoreService';
+import { getUid } from '@/src/services/api';
 import type { Crush } from '@/src/models';
 import { diagnostics } from '@/src/utils/diagnostics';
 
@@ -12,6 +13,11 @@ export function useCrushes() {
     try {
       setLoading(true);
       setError(null);
+      const uid = await getUid();
+      if (!uid) {
+        setCrushes([]);
+        return;
+      }
       setCrushes(await firestoreService.listCrushes());
     } catch (err) {
       diagnostics.error('crushes-refresh-failed', err);

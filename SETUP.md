@@ -62,6 +62,33 @@ firebase login
 
 Project aliases should be configured before connecting local code to Firebase environments.
 
+## Expo Development Build
+
+Knook uses a custom Expo Development Build for local native development.
+
+Build the iOS development app:
+
+```bash
+cd /Users/Amoux/Documents/Knook/Mobile
+source ~/.zshrc
+nvm use 20
+APP_VARIANT=development npx expo run:ios
+```
+
+Start Metro for the development client:
+
+```bash
+APP_VARIANT=development npx expo start --dev-client --clear
+```
+
+The development app identity is:
+
+- Display name: `Knook Dev`
+- iOS bundle identifier: `com.teamknook.knook.dev`
+- URL scheme: `knook-dev`
+
+Expo Go can still be useful for quick JavaScript experiments, but it is not the primary Knook runtime.
+
 ## Environment Variables
 
 Copy `.env.example` to the app-specific environment file once the mobile app is initialized. Never commit real secrets.
@@ -77,4 +104,3 @@ Recommended extensions:
 - GitHub Pull Requests
 - Firebase tooling
 - TypeScript support
-

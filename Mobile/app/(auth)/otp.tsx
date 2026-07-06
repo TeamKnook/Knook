@@ -5,6 +5,7 @@ import { ScreenContainer, SectionHeader, PrimaryButton, GhostButton, TextInputFi
 import { authService } from '@/src/services/auth/authService';
 import { firestoreService } from '@/src/services/firestore/firestoreService';
 import { colors, spacing, typography } from '@/src/theme';
+import { appEnvironment } from '@/src/utils/environment';
 
 export default function OtpScreen() {
   const router = useRouter();
@@ -51,7 +52,7 @@ export default function OtpScreen() {
           <SectionHeader
             eyebrow="Step 2 of 2"
             title="Enter the 6-digit code"
-            subtitle={`Sent to ${phone}. In preview mode any 6 digits work.`}
+            subtitle={`Sent to ${phone}.`}
           />
 
           <TextInputField
@@ -65,7 +66,7 @@ export default function OtpScreen() {
             error={error}
           />
 
-          {devCode ? (
+          {appEnvironment.canUsePreviewTools && devCode ? (
             <Text style={styles.devHint} testID="otp-dev-code">
               Dev code: {devCode}
             </Text>
