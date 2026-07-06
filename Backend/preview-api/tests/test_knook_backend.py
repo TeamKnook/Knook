@@ -246,13 +246,13 @@ class TestMutualMatchFlow:
         b = _get("/matches", headers=hB).json()
         assert all(m["matchId"] != match_id for m in a)
         assert all(m["matchId"] != match_id for m in b)
-        # subsequent send should now 403 (status != active)
+        # subsequent send should now be treated as stale match access
         r2 = _post(
             f"/matches/{match_id}/messages",
             json={"text": "post-unhook"},
             headers=hA,
         )
-        assert r2.status_code == 403
+        assert r2.status_code == 410
 
 
 # ---------------- 403 on non-active matches ----------------

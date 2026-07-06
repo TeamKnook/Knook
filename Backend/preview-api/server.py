@@ -436,7 +436,9 @@ async def get_match(match_id: str, user=Depends(current_user)):
     doc = await db.matches.find_one({"matchId": match_id}, {"_id": 0})
     if not doc or user["uid"] not in doc.get("participants", []):
         raise HTTPException(404, "not found")
-    if doc.get("status") not in ("active", "unhooked"):
+    if doc.get("status") == "unhooked":
+        raise HTTPException(410, "match no longer available")
+    if doc.get("status") != "active":
         raise HTTPException(403, "match not revealed yet")
     return await _serialize_match(doc, user["uid"])
 
@@ -497,6 +499,8 @@ async def list_messages(match_id: str, user=Depends(current_user)):
     match = await db.matches.find_one({"matchId": match_id}, {"_id": 0})
     if not match or user["uid"] not in match.get("participants", []):
         raise HTTPException(404, "not found")
+    if match.get("status") == "unhooked":
+        raise HTTPException(410, "match no longer available")
     if match.get("status") != "active":
         raise HTTPException(403, "chat unavailable")
     docs = await db.messages.find(
@@ -512,6 +516,8 @@ async def send_message(match_id: str, body: MessageIn, user=Depends(current_user
     match = await db.matches.find_one({"matchId": match_id}, {"_id": 0})
     if not match or user["uid"] not in match.get("participants", []):
         raise HTTPException(404, "not found")
+    if match.get("status") == "unhooked":
+        raise HTTPException(410, "match no longer available")
     if match.get("status") != "active":
         raise HTTPException(403, "chat unavailable")
     text = (body.text or "").strip()
