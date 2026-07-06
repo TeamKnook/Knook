@@ -21,6 +21,9 @@ const sandbox = {
     if (request === '@/src/utils/diagnostics') {
       return { diagnostics: { log() {}, warn() {}, error() {} } };
     }
+    if (request === '@/src/utils/environment') {
+      return { appEnvironment: { canUsePreviewTools: true } };
+    }
     return require(request);
   },
   console,

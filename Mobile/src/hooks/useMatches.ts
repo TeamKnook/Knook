@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { firestoreService } from '@/src/services/firestore/firestoreService';
+import { getUid } from '@/src/services/api';
 import type { Match } from '@/src/models';
 import { diagnostics } from '@/src/utils/diagnostics';
 
@@ -12,6 +13,11 @@ export function useMatches() {
     try {
       setLoading(true);
       setError(null);
+      const uid = await getUid();
+      if (!uid) {
+        setMatches([]);
+        return;
+      }
       setMatches(await firestoreService.listMatches());
     } catch (err) {
       diagnostics.error('matches-refresh-failed', err);

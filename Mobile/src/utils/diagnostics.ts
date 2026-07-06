@@ -1,7 +1,10 @@
+import { appEnvironment } from '@/src/utils/environment';
+
 const PREFIX = '[knook:runtime]';
 
 function isDevRuntime() {
-  return typeof __DEV__ !== 'undefined' ? __DEV__ : process.env.NODE_ENV !== 'production';
+  const isReactNativeDev = typeof __DEV__ !== 'undefined' ? __DEV__ : process.env.NODE_ENV !== 'production';
+  return isReactNativeDev && appEnvironment.canUsePreviewTools;
 }
 
 function safePayload(payload: unknown) {

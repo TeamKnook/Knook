@@ -1,4 +1,5 @@
 import { diagnostics } from '@/src/utils/diagnostics';
+import { appEnvironment } from '@/src/utils/environment';
 
 /**
  * Contacts service.
@@ -56,10 +57,12 @@ export function sanitizeContactsForPreview(input: unknown): ContactEntry[] {
 
 export const contactsService = {
   async loadContacts(): Promise<ContactEntry[]> {
-    // TODO(real-device): use loadDeviceContacts() once expo-contacts is wired.
-    const contacts = sanitizeContactsForPreview(MOCK_CONTACTS);
-    diagnostics.log('contacts-preview-loaded', { count: contacts.length });
-    return contacts;
+    if (appEnvironment.canUsePreviewTools) {
+      const contacts = sanitizeContactsForPreview(MOCK_CONTACTS);
+      diagnostics.log('contacts-preview-loaded', { count: contacts.length });
+      return contacts;
+    }
+    return this.loadDeviceContacts();
   },
 
   /**
@@ -88,9 +91,12 @@ export const contactsService = {
       return contacts;
     } catch (error) {
       diagnostics.error('contacts-device-load-failed', error);
-      const contacts = sanitizeContactsForPreview(MOCK_CONTACTS);
-      diagnostics.log('contacts-preview-fallback-loaded', { count: contacts.length });
-      return contacts;
+      if (appEnvironment.canUsePreviewTools) {
+        const contacts = sanitizeContactsForPreview(MOCK_CONTACTS);
+        diagnostics.log('contacts-preview-fallback-loaded', { count: contacts.length });
+        return contacts;
+      }
+      return [];
     }
   },
 };

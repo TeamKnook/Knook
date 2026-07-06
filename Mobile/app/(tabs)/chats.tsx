@@ -6,6 +6,7 @@ import { useMatches } from '@/src/hooks/useMatches';
 import { firestoreService } from '@/src/services/firestore/firestoreService';
 import { colors, radius, spacing, typography } from '@/src/theme';
 import { diagnostics } from '@/src/utils/diagnostics';
+import { appEnvironment } from '@/src/utils/environment';
 
 export default function ChatsScreen() {
   const router = useRouter();
@@ -45,11 +46,13 @@ export default function ChatsScreen() {
               description="Matches appear here after 6:30 PM IST when two people crushed on each other."
               testID="chats-empty"
             >
-              <GhostButton
-                testID="dev-trigger-reveal-button"
-                label="Trigger reveal now (demo)"
-                onPress={triggerReveal}
-              />
+              {appEnvironment.canUsePreviewTools ? (
+                <GhostButton
+                  testID="dev-trigger-reveal-button"
+                  label="Trigger reveal now (demo)"
+                  onPress={triggerReveal}
+                />
+              ) : null}
             </EmptyState>
           ) : null
         }

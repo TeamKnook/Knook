@@ -93,7 +93,16 @@ Start the Expo app:
 
 ```bash
 cd Mobile
-yarn start
+APP_VARIANT=development yarn start --dev-client
+```
+
+Build and install the local iOS development app:
+
+```bash
+cd Mobile
+source ~/.zshrc
+nvm use 20
+APP_VARIANT=development npx expo run:ios
 ```
 
 Run backend tests:
@@ -125,6 +134,16 @@ cd Backend/functions
 npm install
 npm run build
 ```
+
+## Local Native Development
+
+Expo Go is no longer the primary Knook runtime. Use the custom `Knook Dev` development build for local native development.
+
+See:
+
+- [Development Build Migration](Docs/DEVELOPMENT_BUILD_MIGRATION.md)
+- [Native Project Strategy](Docs/NATIVE_PROJECT_STRATEGY.md)
+- [Two-Device Development Build Workflow](Scripts/two-device-development-build.md)
 
 ## Contributing
 

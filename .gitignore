@@ -41,6 +41,7 @@ dist/
 coverage/
 
 # iOS and Xcode
+Mobile/ios/
 ios/Pods/
 ios/build/
 DerivedData/
@@ -49,6 +50,7 @@ DerivedData/
 *.xcuserstate
 
 # Android
+Mobile/android/
 android/.gradle/
 android/app/build/
 android/build/
