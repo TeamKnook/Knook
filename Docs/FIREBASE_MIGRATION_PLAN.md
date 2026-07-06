@@ -44,11 +44,11 @@ Move Knook from the temporary local preview implementation to the intended Fireb
 
 ## 5. Deterministic Mutual Match Creation
 
-- Current temporary implementation: preview API detects mutual crushes but creates random match IDs.
+- Current temporary implementation: preview API detects mutual crushes and creates deterministic match IDs from sorted participant UIDs.
 - Target Firebase implementation: Cloud Function creates `matches/{sortedUidA_sortedUidB}` in a transaction.
 - Affected files: `Backend/functions/src/crushes/detectMutualCrush.ts`, Firestore indexes/rules.
 - Risks: duplicate matches during simultaneous reciprocal writes.
-- Validation criteria: repeated or simultaneous mutual crush writes create at most one match.
+- Validation criteria: repeated or simultaneous mutual crush writes create at most one match, and duplicate crush submissions do not create duplicate visible cards or match records.
 - Rollback strategy: disable function trigger in non-production while preserving crush docs.
 
 ## 6. Daily Reveal Cloud Function
@@ -56,8 +56,8 @@ Move Knook from the temporary local preview implementation to the intended Fireb
 - Current temporary implementation: authenticated demo route `/api/dev/trigger-reveal`.
 - Target Firebase implementation: scheduled Cloud Function at 6:30 PM IST.
 - Affected files: `Backend/functions/src/reveal/dailyReveal.ts`, scheduled function config.
-- Risks: wrong timezone, revealing early, expiry based on `matchedAt` instead of `revealedAt`.
-- Validation criteria: `pending_reveal` changes to `active` only at the scheduled reveal; `matchExpiresAt` equals `revealedAt + 48h`.
+- Risks: wrong timezone, revealing early, expiry based on `matchedAt` instead of `revealedAt`, repeated reveal execution extending expiry.
+- Validation criteria: `pending_reveal` changes to `active` only at the scheduled reveal; `matchExpiresAt` equals `revealedAt + 48h`; repeated execution leaves `revealedAt` and `matchExpiresAt` unchanged.
 - Rollback strategy: pause scheduled function and manually inspect pending matches before re-enabling.
 
 ## 7. Realtime Match Listeners
@@ -83,8 +83,8 @@ Move Knook from the temporary local preview implementation to the intended Fireb
 - Current temporary implementation: preview route updates `revealedBy` and `mutualReveal`.
 - Target Firebase implementation: callable function or guarded Firestore write that adds the current uid to `revealedBy`.
 - Affected files: `Mobile/app/reveal/[matchId].tsx`, `Mobile/src/services/firestore/firestoreService.ts`, Cloud Functions/rules.
-- Risks: client spoofing another participant, exposing names too early.
-- Validation criteria: only own reveal state can be changed; names appear only after both users reveal.
+- Risks: client spoofing another participant, exposing names too early, duplicate reveal writes leaving one client stuck.
+- Validation criteria: only own reveal state can be changed; repeated reveal taps store each uid once; names appear only after both users reveal; mutual reveal survives refresh/restart.
 - Rollback strategy: disable reveal write path while preserving anonymous chat.
 
 ## 10. Unhook Cleanup
@@ -92,8 +92,8 @@ Move Knook from the temporary local preview implementation to the intended Fireb
 - Current temporary implementation: preview route marks match and crushes unhooked and soft-deletes messages.
 - Target Firebase implementation: callable function updates match, crush mirrors, and message deletion markers atomically enough for user safety.
 - Affected files: `Backend/functions/src/matches/handleUnhook.ts`, `Mobile/app/chat/[matchId].tsx`.
-- Risks: partial cleanup, notification leakage, stale chat visible to other participant.
-- Validation criteria: match disappears for both users; messages are inaccessible; no notification is sent.
+- Risks: partial cleanup, notification leakage, stale chat visible to other participant, direct stale match ID access after Unhook.
+- Validation criteria: match disappears for both users; stale match reads and message reads/writes are rejected; messages are inaccessible; no notification is sent.
 - Rollback strategy: keep unhook function disabled until emulator tests cover both users.
 
 ## 11. FCM

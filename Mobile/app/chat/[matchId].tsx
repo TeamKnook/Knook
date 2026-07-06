@@ -39,6 +39,12 @@ export default function ChatScreen() {
     }
   }, [match, router]);
 
+  useEffect(() => {
+    if (loadError === 'match no longer available') {
+      router.replace('/(tabs)/chats');
+    }
+  }, [loadError, router]);
+
   const onSend = async () => {
     const text = draft.trim();
     if (!text) return;
