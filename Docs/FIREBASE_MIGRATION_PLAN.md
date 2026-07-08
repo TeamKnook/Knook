@@ -17,12 +17,12 @@ Move Knook from the temporary local preview implementation to the intended Fireb
 
 ## 2. Firebase Phone Auth
 
-- Current temporary implementation: `Backend/preview-api` accepts demo OTP when `DEMO_MODE=true`.
-- Target Firebase implementation: React Native Firebase phone auth with real verification flows.
-- Affected files: `Mobile/src/services/auth/authService.ts`, `Mobile/app/(auth)/*`, Firebase Auth settings.
-- Risks: simulator testing limitations, APNs/reCAPTCHA setup, test phone-number configuration.
-- Validation criteria: test phone numbers can sign in; invalid codes fail; session persists.
-- Rollback strategy: retain preview auth only for local demo until Firebase auth is stable.
+- Current temporary implementation: `Backend/preview-api` accepts demo OTP when `DEMO_MODE=true`; Firebase auth scaffolding exists behind `AUTH_PROVIDER=firebase`.
+- Target Firebase implementation: React Native Firebase phone auth with real verification flows in Knook Dev.
+- Affected files: `Mobile/src/services/auth/*`, `Mobile/app/(auth)/*`, `Mobile/src/services/api.ts`, `Mobile/app.config.js`, Firebase Auth settings.
+- Risks: missing native Firebase config files, simulator testing limitations, APNs/reCAPTCHA setup, test phone-number configuration.
+- Validation criteria: Firebase test phone numbers can sign in; invalid codes fail; session persists; preview backend verifies Firebase ID tokens in `AUTH_MODE=firebase`.
+- Rollback strategy: set `AUTH_PROVIDER=preview` and `AUTH_MODE=preview` while Firebase auth is stabilized.
 
 ## 3. Users/Profile Data In Firestore
 

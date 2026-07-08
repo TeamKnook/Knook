@@ -33,6 +33,8 @@ DEMO_OTP_CODE = os.environ.get("DEMO_OTP_CODE")
 JWT_SECRET = os.environ.get("JWT_SECRET")
 JWT_ALGORITHM = "HS256"
 JWT_TTL_HOURS = 12
+AUTH_MODE = os.environ.get("AUTH_MODE", "preview").lower()
+FIREBASE_PROJECT_ID = os.environ.get("FIREBASE_PROJECT_ID")
 TWO_USER_DEMO_PHONES = {
     "USER_A": "+15555550100",
     "USER_B": "+15555550101",
@@ -128,14 +130,96 @@ def decode_session_token(token: str) -> str:
     return str(payload["sub"])
 
 
+def verify_firebase_token(token: str) -> dict:
+    try:
+        import firebase_admin
+        from firebase_admin import auth as firebase_auth
+    except ImportError:
+        raise HTTPException(500, "firebase-admin is required for AUTH_MODE=firebase")
+
+    if not firebase_admin._apps:
+        options = {"projectId": FIREBASE_PROJECT_ID} if FIREBASE_PROJECT_ID else None
+        firebase_admin.initialize_app(options=options)
+
+    try:
+        claims = firebase_auth.verify_id_token(token)
+    except Exception:
+        raise HTTPException(401, "invalid firebase token")
+
+    if FIREBASE_PROJECT_ID and claims.get("aud") != FIREBASE_PROJECT_ID:
+        raise HTTPException(401, "wrong firebase project")
+    if not claims.get("uid"):
+        raise HTTPException(401, "missing firebase uid")
+    if not claims.get("phone_number"):
+        raise HTTPException(401, "missing phone claim")
+    return claims
+
+
+async def resolve_firebase_user(claims: dict) -> dict:
+    firebase_uid = str(claims["uid"])
+    if not claims.get("phone_number"):
+        raise HTTPException(401, "missing phone claim")
+    phone = normalize_phone(str(claims["phone_number"]))
+    if len(re.sub(r"\D", "", phone)) < 8:
+        raise HTTPException(401, "invalid phone claim")
+
+    phone_hash = sha256(phone)
+    phone_last4 = re.sub(r"\D", "", phone)[-4:]
+
+    user = await db.users.find_one({"firebase_uid": firebase_uid}, {"_id": 0})
+    if user:
+        return user
+
+    existing = await db.users.find_one({"phoneHash": phone_hash}, {"_id": 0})
+    if existing:
+        await db.users.update_one(
+            {"uid": existing["uid"]},
+            {"$set": {"firebase_uid": firebase_uid, "updatedAt": now()}},
+        )
+        user = await db.users.find_one({"uid": existing["uid"]}, {"_id": 0})
+        log_demo_event(
+            f"[{demo_alias_for_user(user)}]",
+            "firebase identity attached to existing preview user",
+            uid=user["uid"],
+        )
+        return user
+
+    user_doc = {
+        "uid": firebase_uid,
+        "firebase_uid": firebase_uid,
+        "phoneHash": phone_hash,
+        "phoneLast4": phone_last4,
+        "onboardingCompleted": False,
+        "relationshipStatus": "single",
+        "createdAt": now(),
+        "updatedAt": now(),
+    }
+    await db.users.insert_one(user_doc)
+    log_demo_event(
+        f"[{demo_alias_for_user(user_doc)}]",
+        "firebase auth created preview user",
+        uid=firebase_uid,
+    )
+    return user_doc
+
+
 async def current_user(authorization: Optional[str] = Header(default=None)) -> dict:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(401, "missing bearer token")
-    uid = decode_session_token(authorization.split(" ", 1)[1].strip())
-    user = await db.users.find_one({"uid": uid}, {"_id": 0})
-    if not user:
-        raise HTTPException(401, "invalid token")
-    return user
+    token = authorization.split(" ", 1)[1].strip()
+
+    if AUTH_MODE == "firebase":
+        claims = verify_firebase_token(token)
+        return await resolve_firebase_user(claims)
+
+    if AUTH_MODE == "preview":
+        uid = decode_session_token(token)
+        user = await db.users.find_one({"uid": uid}, {"_id": 0})
+        if not user:
+            raise HTTPException(401, "invalid token")
+        return user
+
+    raise HTTPException(500, "invalid AUTH_MODE")
 
 
 # ---------- models ----------

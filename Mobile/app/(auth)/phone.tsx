@@ -13,6 +13,7 @@ export default function PhoneScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const onContinue = async () => {
+    if (submitting) return;
     setError(null);
     const normalized = normalizePhone(phone);
     if (normalized.replace(/\D/g, '').length < 8) {

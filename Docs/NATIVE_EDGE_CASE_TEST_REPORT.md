@@ -89,6 +89,7 @@ No P0 findings confirmed yet.
 - Duplicate reciprocal crushes must create at most one deterministic match.
 - Realtime listeners must remove unhooked matches quickly enough that the other user is not left inside a stale chat.
 - Firebase client error handling should distinguish recoverable network/backend failures from successful destructive actions.
+- Firebase Auth migration must preserve the same local preview user mapping for Alex and Jordan by verified phone-number claim before product data moves to Firestore.
 
 ## Remaining Temporary Limitations
 

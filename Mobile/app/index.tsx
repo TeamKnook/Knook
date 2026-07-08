@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { firestoreService } from '@/src/services/firestore/firestoreService';
+import { authService } from '@/src/services/auth/authService';
 import { colors, spacing, typography } from '@/src/theme';
 
 export default function Splash() {
@@ -10,7 +10,7 @@ export default function Splash() {
 
   useEffect(() => {
     (async () => {
-      const uid = await AsyncStorage.getItem('knook.uid');
+      const uid = await authService.getCurrentUid();
       if (!uid) {
         router.replace('/(auth)/phone');
         return;

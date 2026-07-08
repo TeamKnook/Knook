@@ -1,22 +1,17 @@
-/**
- * Firebase app bootstrap.
- *
- * TODO(real-firebase): wire @react-native-firebase/app once the project is
- * generated as an Expo Dev Build. Until then the preview routes everything
- * through src/services/firestore/firestoreService.ts which talks to the
- * MongoDB-backed adapter at $EXPO_PUBLIC_BACKEND_URL.
- *
- * Example for Dev Build:
- *   import { initializeApp, getApps } from '@react-native-firebase/app';
- *   if (!getApps().length) initializeApp(firebaseConfig);
- */
-import { firebaseConfig, isFirebaseConfigured } from './firebaseConfig';
+import { getApps } from '@react-native-firebase/app';
+import { appEnvironment } from '@/src/utils/environment';
+import { diagnostics } from '@/src/utils/diagnostics';
 
 export function bootstrapFirebase(): void {
-  if (!isFirebaseConfigured) {
-    console.log('[firebase] config absent — using preview adapter');
+  if (!appEnvironment.usesFirebaseAuth) {
+    diagnostics.log('firebase-bootstrap-skipped', { authProvider: appEnvironment.authProvider });
     return;
   }
-  // TODO(real-firebase): initializeApp(firebaseConfig);
-  void firebaseConfig;
+
+  const apps = getApps();
+  diagnostics.log('firebase-bootstrap', {
+    appCount: apps.length,
+    authTarget: appEnvironment.firebaseAuthTarget,
+    configPresent: appEnvironment.firebaseConfigPresent,
+  });
 }

@@ -12,12 +12,33 @@ const BASE = process.env.EXPO_PUBLIC_BACKEND_URL;
 const TOKEN_KEY = 'knook.token';
 const UID_KEY = 'knook.uid';
 
-async function getToken(): Promise<string | null> {
+type TokenResolver = (forceRefresh?: boolean) => Promise<string | null>;
+type UidResolver = () => Promise<string | null>;
+
+export async function getStoredToken(): Promise<string | null> {
   return AsyncStorage.getItem(TOKEN_KEY);
 }
 
-export async function setSession(token: string, uid: string) {
-  await AsyncStorage.multiSet([[TOKEN_KEY, token], [UID_KEY, uid]]);
+export async function getStoredUid(): Promise<string | null> {
+  return AsyncStorage.getItem(UID_KEY);
+}
+
+let tokenResolver: TokenResolver = getStoredToken;
+let uidResolver: UidResolver = getStoredUid;
+
+export function setAccessTokenResolver(resolver: TokenResolver) {
+  tokenResolver = resolver;
+}
+
+export function setUidResolver(resolver: UidResolver) {
+  uidResolver = resolver;
+}
+
+export async function setSession(token: string | null, uid: string) {
+  const operations: [string, string][] = [[UID_KEY, uid]];
+  if (token) operations.push([TOKEN_KEY, token]);
+  await AsyncStorage.multiSet(operations);
+  if (!token) await AsyncStorage.removeItem(TOKEN_KEY);
 }
 
 export async function clearSession() {
@@ -25,11 +46,11 @@ export async function clearSession() {
 }
 
 export async function getUid(): Promise<string | null> {
-  return AsyncStorage.getItem(UID_KEY);
+  return uidResolver();
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const token = await getToken();
+  const token = await tokenResolver();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(init.headers as Record<string, string> | undefined),

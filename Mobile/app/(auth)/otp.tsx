@@ -20,6 +20,7 @@ export default function OtpScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const onVerify = async () => {
+    if (submitting) return;
     setError(null);
     if (!/^\d{6}$/.test(code)) {
       setError('Enter the 6-digit code');

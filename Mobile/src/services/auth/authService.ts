@@ -1,15 +1,13 @@
-/**
- * Auth service — wraps Firebase Phone Auth in production, mocks for preview.
- *
- * TODO(real-firebase): replace requestOtp/verifyOtp with
- * `auth().signInWithPhoneNumber(phone)` from @react-native-firebase/auth
- * and `confirmation.confirm(code)`.
- */
-import { api, setSession, clearSession, getUid } from '../api';
+import { api, setAccessTokenResolver, setUidResolver } from '../api';
+import { appEnvironment } from '@/src/utils/environment';
+import type { User } from '@/src/models';
+import { firebaseAuthProvider } from './firebaseAuthProvider';
+import { previewAuthProvider } from './previewAuthProvider';
+import type { AuthProvider } from './authTypes';
 
 export interface RequestOtpResult {
   verificationId: string;
-  devCode: string; // only present in preview
+  devCode?: string;
 }
 
 export interface AuthResult {
@@ -18,19 +16,37 @@ export interface AuthResult {
   onboardingCompleted: boolean;
 }
 
+const provider: AuthProvider = appEnvironment.usesFirebaseAuth
+  ? firebaseAuthProvider
+  : previewAuthProvider;
+
+setAccessTokenResolver((forceRefresh?: boolean) => provider.getAccessToken(forceRefresh));
+setUidResolver(() => provider.getCurrentUid());
+
 export const authService = {
-  requestOtp: (phone: string) =>
-    api.post<RequestOtpResult>('/auth/request-otp', { phone }),
+  async requestOtp(phone: string): Promise<RequestOtpResult> {
+    const session = await provider.sendVerificationCode(phone);
+    return { verificationId: session.id, devCode: session.devCode };
+  },
 
   async verifyOtp(phone: string, verificationId: string, code: string): Promise<AuthResult> {
-    const res = await api.post<AuthResult>('/auth/verify-otp', { phone, verificationId, code });
-    await setSession(res.token, res.uid);
-    return res;
+    const user = await provider.confirmVerificationCode(
+      { id: verificationId, phoneNumber: phone, provider: appEnvironment.authProvider },
+      code,
+    );
+    const me = await api.get<User>('/users/me');
+    return {
+      token: '',
+      uid: user.uid,
+      onboardingCompleted: Boolean(me.onboardingCompleted),
+    };
   },
 
-  signOut: clearSession,
+  signOut: () => provider.signOut(),
 
   async getCurrentUid() {
-    return getUid();
+    return provider.getCurrentUid();
   },
+
+  subscribe: provider.subscribe,
 };
