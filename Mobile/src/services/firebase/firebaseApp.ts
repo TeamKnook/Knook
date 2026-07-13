@@ -12,6 +12,7 @@ export function bootstrapFirebase(): void {
   diagnostics.log('firebase-bootstrap', {
     appCount: apps.length,
     authTarget: appEnvironment.firebaseAuthTarget,
+    firestoreTarget: appEnvironment.firestoreTarget,
     configPresent: appEnvironment.firebaseConfigPresent,
   });
 }

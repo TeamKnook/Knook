@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { firestoreService } from '@/src/services/firestore/firestoreService';
 import { authService } from '@/src/services/auth/authService';
+import { userProfileService } from '@/src/services/firestore/userProfileService';
+import { appEnvironment } from '@/src/utils/environment';
 import { colors, spacing, typography } from '@/src/theme';
 
 export default function Splash() {
@@ -16,7 +17,14 @@ export default function Splash() {
         return;
       }
       try {
-        const me = await firestoreService.getMe();
+        if (!appEnvironment.usesFirebaseAuth) {
+          const { firestoreService } = await import('@/src/services/firestore/firestoreService');
+          const me = await firestoreService.getMe();
+          router.replace(me.onboardingCompleted ? '/(tabs)/crushes' : '/(onboarding)/profile');
+          return;
+        }
+        const me = await userProfileService.getCurrentUserProfile(uid)
+          ?? await userProfileService.createUserProfileFromAuth();
         if (!me.onboardingCompleted) {
           router.replace('/(onboarding)/profile');
         } else {

@@ -3,7 +3,6 @@ import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-na
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScreenContainer, SectionHeader, PrimaryButton, GhostButton, TextInputField } from '@/src/components';
 import { authService } from '@/src/services/auth/authService';
-import { firestoreService } from '@/src/services/firestore/firestoreService';
 import { colors, spacing, typography } from '@/src/theme';
 import { appEnvironment } from '@/src/utils/environment';
 
@@ -32,8 +31,6 @@ export default function OtpScreen() {
       if (res.onboardingCompleted) {
         router.replace('/(tabs)/crushes');
       } else {
-        // ensure profile doc exists before onboarding screen reads it
-        try { await firestoreService.getMe(); } catch { /* ignore */ }
         router.replace('/(onboarding)/profile');
       }
     } catch (e: unknown) {

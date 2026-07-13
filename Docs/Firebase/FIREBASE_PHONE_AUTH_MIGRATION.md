@@ -108,12 +108,18 @@ Current development Firebase project:
   - Alex: `+12025550100`
   - Jordan: `+12025550101`
 
+Follow-up migration now in progress:
+
+- Firestore user/profile documents at `users/{uid}`.
+- Firestore rules that allow users to read/write only their own profile.
+- Temporary profile sync from Firestore to FastAPI while product data remains preview-backed.
+
 Still required before broader rollout:
 
 - Physical iPhone verification with Apple signing/provisioning and APNs considerations.
 - Android Firebase Phone Auth validation with SHA-1/SHA-256 fingerprints.
 - Auth Emulator decision, if the team wants fully local auth without relying on Firebase Console test numbers.
-- Firestore product-data migration in a later milestone.
+- Firestore product-data migration for crushes, matches, chat, reveal, and Unhook in later milestones.
 - Removal of the temporary FastAPI/MongoDB bridge after product data moves to Firebase.
 
 Required local dependency install after pulling this branch:

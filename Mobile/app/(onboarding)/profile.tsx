@@ -1,10 +1,16 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenContainer, SectionHeader, PrimaryButton, TextInputField } from '@/src/components';
-import { firestoreService } from '@/src/services/firestore/firestoreService';
 import { colors, radius, spacing, typography } from '@/src/theme';
 import { DATE_VIBES, GENDERS, INTERESTED_IN, LOVE_LANGUAGES } from '@/src/constants';
+import { authService } from '@/src/services/auth/authService';
+import { userProfileService } from '@/src/services/firestore/userProfileService';
+import {
+  displayInterestedIn,
+  displayProfileGender,
+  validateOnboardingInput,
+} from '@/src/services/firestore/userProfileValidation';
 
 function Chip({ label, selected, onPress, testID }: { label: string; selected: boolean; onPress: () => void; testID: string }) {
   return (
@@ -26,29 +32,49 @@ export default function ProfileSetup() {
   const [interested, setInterested] = useState<string | null>(null);
   const [vibe, setVibe] = useState<string | null>(null);
   const [love, setLove] = useState<string | null>(null);
+  const [favouriteShow, setFavouriteShow] = useState('');
   const [icebreakerAnswer, setIcebreakerAnswer] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    (async () => {
+      const uid = await authService.getCurrentUid();
+      if (!uid) return;
+      const profile = await userProfileService.getCurrentUserProfile(uid);
+      if (!profile) return;
+      setName(profile.firstName ?? '');
+      setAge(profile.age ? String(profile.age) : '');
+      setGender(displayProfileGender(profile.gender) ?? null);
+      setInterested(displayInterestedIn(profile.interestedIn) ?? null);
+      setVibe(profile.vibeAnswers.idealFirstDate?.[0] ?? null);
+      setLove(profile.vibeAnswers.lookingFor?.[0] ?? null);
+      setFavouriteShow(profile.favouriteShow ?? profile.vibeAnswers.favouriteTVShow?.[0] ?? '');
+      setIcebreakerAnswer(profile.vibeAnswers.idealFirstDate?.[0] ?? '');
+    })();
+  }, []);
+
   const onSave = async () => {
     setError(null);
-    if (!name.trim() || !age || !gender || !interested) {
-      setError('Please fill in name, age, gender and interest');
+    const input = {
+      firstName: name,
+      age,
+      gender,
+      interestedIn: interested,
+      idealFirstDate: icebreakerAnswer.trim() || vibe,
+      loveLanguage: love,
+      favouriteShow,
+    };
+    const validation = validateOnboardingInput(input);
+    if (!validation.ok) {
+      setError(validation.error);
       return;
     }
     try {
       setSubmitting(true);
-      await firestoreService.updateMe({
-        name: name.trim(),
-        age: Number(age),
-        gender,
-        interestedIn: [interested],
-        dateVibe: vibe ?? undefined,
-        loveLanguage: love ?? undefined,
-        icebreaker: 'My ideal first date is…',
-        icebreakerAnswer: icebreakerAnswer.trim() || undefined,
-        onboardingCompleted: true,
-      });
+      const uid = await authService.getCurrentUid();
+      if (!uid) throw new Error('Sign in before saving your profile');
+      await userProfileService.completeOnboarding(uid, input);
       router.replace('/(tabs)/crushes');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Could not save');
@@ -119,6 +145,13 @@ export default function ProfileSetup() {
             onChangeText={setIcebreakerAnswer}
             multiline
             style={styles.textarea}
+          />
+
+          <TextInputField
+            testID="favourite-show-input"
+            label="Favourite TV show"
+            value={favouriteShow}
+            onChangeText={setFavouriteShow}
           />
 
           {error ? <Text style={styles.error}>{error}</Text> : null}

@@ -66,6 +66,7 @@ For Firebase Phone Auth development, complete the human Console setup in:
 
 - `Docs/Firebase/FIREBASE_CONSOLE_SETUP.md`
 - `Docs/Firebase/FIREBASE_ADMIN_LOCAL_SETUP.md`
+- `Docs/Firestore/FIRESTORE_CONSOLE_SETUP.md`
 
 Local development files expected after Console setup:
 
@@ -137,6 +138,15 @@ Expo Go can still be useful for quick JavaScript experiments, but it is not the 
 Copy `.env.example` to the app-specific environment file once the mobile app is initialized. Never commit real secrets.
 
 Use `AUTH_PROVIDER=preview` to keep the old preview JWT path. Use `AUTH_PROVIDER=firebase` only after Firebase config files are present and the native app has been rebuilt.
+
+Firestore profile development supports:
+
+```env
+FIRESTORE_TARGET=development
+FIRESTORE_TARGET=emulator
+```
+
+Emulator mode is development-only. See `Docs/Firestore/FIRESTORE_EMULATOR_SETUP.md`.
 
 ## VS Code Extensions
 

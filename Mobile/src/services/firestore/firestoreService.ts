@@ -6,11 +6,21 @@
  * are kept identical so the screens never change.
  */
 import { api } from '../api';
+import { authService } from '@/src/services/auth/authService';
 import type { Crush, Match, Message, User } from '@/src/models';
+import { appEnvironment } from '@/src/utils/environment';
+import { mapProfileToUser, userProfileService } from './userProfileService';
 
 export const firestoreService = {
   // users
-  getMe: () => api.get<User>('/users/me'),
+  async getMe() {
+    if (!appEnvironment.usesFirebaseAuth) return api.get<User>('/users/me');
+    const uid = await authService.getCurrentUid();
+    if (!uid) throw new Error('Sign in before loading your profile');
+    const profile = await userProfileService.getCurrentUserProfile(uid);
+    if (!profile) throw new Error('Profile not found');
+    return mapProfileToUser(profile);
+  },
   updateMe: (patch: Partial<User>) => api.put<User>('/users/me', patch),
 
   // crushes

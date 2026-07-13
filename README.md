@@ -19,7 +19,7 @@ Knook/
 
 ## Current Status
 
-Knook runs locally as the custom native `Knook Dev` iOS development build. The current integration baseline includes the stabilized Emergent-generated MVP, pre-reveal privacy fixes, native development build workflow, edge-case validation, and Firebase Phone Auth foundation work.
+Knook runs locally as the custom native `Knook Dev` iOS development build. The current integration baseline includes the stabilized Emergent-generated MVP, pre-reveal privacy fixes, native development build workflow, edge-case validation, Firebase Phone Auth foundation work, and Firestore-backed user/profile migration work.
 
 ## Production Stack Direction
 
@@ -73,6 +73,25 @@ Firebase mode requires human-supplied Firebase Console configuration files and l
 - [Phone Auth Privacy Requirements](Docs/Firebase/PHONE_AUTH_PRIVACY_REQUIREMENTS.md)
 
 The development Firebase project currently validated locally is `knook-e2c74`, with fictional Firebase Console test numbers for Alex and Jordan. Real user SMS, physical-device behavior, and Android Firebase Phone Auth remain separate follow-up validation items.
+
+## Firestore Users and Profiles
+
+User account profile data is migrating to Firestore at `users/{uid}`. Firebase Auth remains the source of truth for the account phone number, and Firestore is the canonical source for onboarding/profile completion.
+
+Product data still remains on the temporary FastAPI/MongoDB preview layer:
+
+- crushes
+- matches
+- messages
+- reveal state
+- Unhook state
+
+See:
+
+- [Firestore Current State](Docs/Firestore/FIRESTORE_USERS_PROFILES_CURRENT_STATE.md)
+- [Firestore Profile Schema](Docs/Firestore/FIRESTORE_USERS_PROFILE_SCHEMA.md)
+- [Firestore Profile Preview Bridge](Docs/Firestore/FIRESTORE_PROFILE_PREVIEW_BRIDGE.md)
+- [Firestore Users/Profile Migration](Docs/Firestore/FIRESTORE_USERS_PROFILES_MIGRATION.md)
 
 ## Local Setup
 
@@ -162,6 +181,13 @@ Run frontend type checking:
 ```bash
 cd Mobile
 yarn typecheck
+```
+
+Run focused profile migration checks:
+
+```bash
+cd Mobile
+yarn test:profiles
 ```
 
 Build Firebase Functions:

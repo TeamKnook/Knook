@@ -3,11 +3,13 @@ import Constants from 'expo-constants';
 type AppVariant = 'development' | 'preview' | 'production';
 type AuthProvider = 'firebase' | 'preview';
 type FirebaseAuthTarget = 'development' | 'emulator';
+type FirestoreTarget = 'development' | 'emulator';
 
 const extra = (Constants.expoConfig?.extra ?? {}) as {
   appVariant?: AppVariant;
   authProvider?: AuthProvider;
   firebaseAuthTarget?: FirebaseAuthTarget;
+  firestoreTarget?: FirestoreTarget;
   firebaseConfigPresent?: { ios?: boolean; android?: boolean };
 };
 
@@ -15,6 +17,7 @@ export const appEnvironment = {
   variant: extra.appVariant ?? 'production',
   authProvider: extra.authProvider ?? 'preview',
   firebaseAuthTarget: extra.firebaseAuthTarget ?? 'development',
+  firestoreTarget: extra.firestoreTarget ?? 'development',
   firebaseConfigPresent: extra.firebaseConfigPresent ?? {},
   isDevelopmentBuild: extra.appVariant === 'development',
   isPreviewBuild: extra.appVariant === 'preview',
@@ -22,6 +25,7 @@ export const appEnvironment = {
   usesFirebaseAuth: extra.authProvider === 'firebase',
   usesPreviewAuth: (extra.authProvider ?? 'preview') === 'preview',
   usesFirebaseAuthEmulator: extra.firebaseAuthTarget === 'emulator' && extra.appVariant === 'development',
+  usesFirestoreEmulator: extra.firestoreTarget === 'emulator' && extra.appVariant === 'development',
   isDemoMode: process.env.EXPO_PUBLIC_DEMO_MODE === 'true',
   get canUsePreviewTools() {
     return this.isDevelopmentBuild && this.isDemoMode;

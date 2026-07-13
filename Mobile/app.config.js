@@ -5,6 +5,7 @@ const { withPodfile } = require('@expo/config-plugins');
 const APP_VARIANT = process.env.APP_VARIANT || 'development';
 const AUTH_PROVIDER = process.env.AUTH_PROVIDER || 'preview';
 const FIREBASE_AUTH_TARGET = process.env.FIREBASE_AUTH_TARGET || 'development';
+const FIRESTORE_TARGET = process.env.FIRESTORE_TARGET || 'development';
 const APPLE_TEAM_ID = process.env.APPLE_TEAM_ID;
 
 const variants = {
@@ -55,7 +56,7 @@ const firebaseBuildPlugins = AUTH_PROVIDER === 'firebase' && hasPackage('expo-bu
         ios: {
           buildReactNativeFromSource: true,
           useFrameworks: 'static',
-          forceStaticLinking: ['RNFBApp', 'RNFBAuth'],
+          forceStaticLinking: ['RNFBApp', 'RNFBAuth', 'RNFBFirestore'],
         },
       },
     ]]
@@ -155,6 +156,7 @@ const config = {
       appVariant: APP_VARIANT,
       authProvider: AUTH_PROVIDER,
       firebaseAuthTarget: FIREBASE_AUTH_TARGET,
+      firestoreTarget: FIRESTORE_TARGET,
       firebaseConfigPresent: {
         ios: hasIosFirebaseConfig,
         android: hasAndroidFirebaseConfig,

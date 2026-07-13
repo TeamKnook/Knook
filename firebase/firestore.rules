@@ -1,0 +1,65 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function userProfileFields() {
+      return [
+        'uid',
+        'phoneNumberE164',
+        'phoneLast4',
+        'onboardingCompleted',
+        'onboardingCompletedAt',
+        'firstName',
+        'age',
+        'gender',
+        'interestedIn',
+        'vibeAnswers',
+        'favouriteShow',
+        'accountStatus',
+        'accessStatus',
+        'createdAt',
+        'updatedAt',
+        'lastSeenAt',
+        'schemaVersion'
+      ];
+    }
+
+    function hasOnlyProfileFields() {
+      return request.resource.data.keys().hasOnly(userProfileFields());
+    }
+
+    function immutableProfileFieldsUnchanged() {
+      return request.resource.data.uid == resource.data.uid
+        && request.resource.data.phoneNumberE164 == resource.data.phoneNumberE164
+        && request.resource.data.phoneLast4 == resource.data.phoneLast4
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.schemaVersion == resource.data.schemaVersion;
+    }
+
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid)
+        && hasOnlyProfileFields()
+        && request.resource.data.uid == uid
+        && request.resource.data.phoneNumberE164 is string
+        && request.resource.data.phoneLast4 is string
+        && request.resource.data.schemaVersion == 1;
+      allow update: if isOwner(uid)
+        && hasOnlyProfileFields()
+        && immutableProfileFieldsUnchanged();
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

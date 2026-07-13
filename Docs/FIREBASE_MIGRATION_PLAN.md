@@ -26,12 +26,12 @@ Move Knook from the temporary local preview implementation to the intended Fireb
 
 ## 3. Users/Profile Data In Firestore
 
-- Current temporary implementation: MongoDB `users` collection through `/api/users/me`.
-- Target Firebase implementation: `users/{uid}` Firestore documents.
-- Affected files: `Mobile/src/services/firestore/firestoreService.ts`, `Mobile/src/models/User.ts`, Firestore rules.
-- Risks: exposing phone hash or profile data too broadly, incomplete onboarding state.
-- Validation criteria: users can create, read, and update their own profile only.
-- Rollback strategy: keep profile write surface unchanged so the mobile screens can temporarily use preview API.
+- Current migration: Firestore `users/{uid}` is becoming canonical for account/profile and onboarding data.
+- Temporary compatibility: MongoDB preview users are still minimally synced after profile completion so local product flows keep reveal/chat display names.
+- Affected files: `Mobile/src/services/firestore/userProfileService.ts`, `Mobile/src/services/firestore/userProfileTypes.ts`, `Mobile/src/services/firestore/userProfileValidation.ts`, Firestore rules.
+- Risks: exposing profile data too broadly, saving partial onboarding early, losing preview compatibility before product data migrates.
+- Validation criteria: users can create, read, and update only their own profile; incomplete onboarding routes to onboarding; completed profiles route to main app; preview product flow still works.
+- Rollback strategy: keep the preview profile bridge while profile routing is validated.
 
 ## 4. Crush Storage In Firestore
 

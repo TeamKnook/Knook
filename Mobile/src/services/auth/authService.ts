@@ -1,6 +1,7 @@
 import { api, setAccessTokenResolver, setUidResolver } from '../api';
 import { appEnvironment } from '@/src/utils/environment';
 import type { User } from '@/src/models';
+import { userProfileService } from '@/src/services/firestore/userProfileService';
 import { firebaseAuthProvider } from './firebaseAuthProvider';
 import { previewAuthProvider } from './previewAuthProvider';
 import type { AuthProvider } from './authTypes';
@@ -34,6 +35,14 @@ export const authService = {
       { id: verificationId, phoneNumber: phone, provider: appEnvironment.authProvider },
       code,
     );
+    if (appEnvironment.usesFirebaseAuth) {
+      const profile = await userProfileService.createUserProfileFromAuth();
+      return {
+        token: '',
+        uid: user.uid,
+        onboardingCompleted: Boolean(profile.onboardingCompleted),
+      };
+    }
     const me = await api.get<User>('/users/me');
     return {
       token: '',

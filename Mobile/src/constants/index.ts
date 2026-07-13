@@ -12,5 +12,5 @@ export const LOVE_LANGUAGES = [
   'Physical touch',
   'Gifts',
 ];
-export const GENDERS = ['Woman', 'Man', 'Non-binary', 'Prefer not to say'];
+export const GENDERS = ['Woman', 'Man', 'Non-binary'];
 export const INTERESTED_IN = ['Women', 'Men', 'Everyone'];
