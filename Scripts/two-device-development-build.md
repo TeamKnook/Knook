@@ -7,7 +7,7 @@ Use this workflow to run the two-user flow in the custom `Knook Dev` iOS develop
 User A:
 
 ```text
-Phone: +15555550100
+Phone: +12025550100
 OTP: 123456
 Name: Alex
 ```
@@ -15,7 +15,7 @@ Name: Alex
 User B:
 
 ```text
-Phone: +15555550101
+Phone: +12025550101
 OTP: 123456
 Name: Jordan
 ```
@@ -36,9 +36,23 @@ mongosh --eval 'db.runCommand({ ping: 1 })'
 
 ## 3. Start FastAPI
 
+For the current Firebase Auth foundation branch, run the preview API in Firebase mode:
+
 ```bash
 cd /Users/Amoux/Documents/Knook/Backend/preview-api
 source .venv/bin/activate
+AUTH_MODE=firebase \
+FIREBASE_PROJECT_ID=knook-e2c74 \
+GOOGLE_APPLICATION_CREDENTIALS=/Users/Amoux/.config/knook/firebase/knook-development-admin.json \
+uvicorn server:app --reload --host 0.0.0.0 --port 8000
+```
+
+For the older preview-JWT fallback, use:
+
+```bash
+cd /Users/Amoux/Documents/Knook/Backend/preview-api
+source .venv/bin/activate
+AUTH_MODE=preview \
 uvicorn server:app --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -54,7 +68,7 @@ curl http://127.0.0.1:8000/api/
 cd /Users/Amoux/Documents/Knook/Mobile
 source ~/.zshrc
 nvm use 20
-APP_VARIANT=development npx expo run:ios
+APP_VARIANT=development AUTH_PROVIDER=firebase npx expo run:ios
 ```
 
 The app installed on the simulator should be named `Knook Dev`.
@@ -65,7 +79,7 @@ The app installed on the simulator should be named `Knook Dev`.
 cd /Users/Amoux/Documents/Knook/Mobile
 source ~/.zshrc
 nvm use 20
-APP_VARIANT=development npx expo start --dev-client --clear
+APP_VARIANT=development AUTH_PROVIDER=firebase npx expo start --dev-client --clear
 ```
 
 ## 6. Boot Two Simulators
@@ -99,7 +113,7 @@ Practical manual path:
 
 1. Keep Metro running.
 2. In Simulator, switch to Simulator B.
-3. Run `APP_VARIANT=development npx expo run:ios` again if the app is not installed on B.
+3. Run `APP_VARIANT=development AUTH_PROVIDER=firebase npx expo run:ios` again if the app is not installed on B.
 4. Confirm `Knook Dev` appears on both simulator home screens.
 
 If a direct `.app` path is available:

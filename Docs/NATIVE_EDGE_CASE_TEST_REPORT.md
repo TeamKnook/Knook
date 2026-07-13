@@ -19,8 +19,25 @@ This report distinguishes:
 | Edge branch | `test/native-edge-cases` |
 | Preview API | FastAPI local preview API |
 | Database | Local MongoDB preview database |
-| Test users | Alex `+15555550100`, Jordan `+15555550101` |
+| Test users | Alex `+12025550100`, Jordan `+12025550101` |
 | Update model | Polling in preview app; Firestore listeners deferred |
+
+## Firebase Auth Retest
+
+After the Firebase foundation work, the same Knook Dev two-simulator flow was manually revalidated in Firebase auth mode.
+
+| Check | Human-confirmed result | Notes |
+| --- | --- | --- |
+| Alex Firebase Phone Auth sign-in | Passed | `+12025550100` signed in with Firebase Console test verification. |
+| Jordan Firebase Phone Auth sign-in | Passed | `+12025550101` signed in independently on a second simulator. |
+| Backend Firebase token bridge | Passed | FastAPI accepted Firebase ID tokens and resolved local preview users. |
+| Pre-reveal privacy | Passed | Reciprocal crush remained private before reveal. |
+| Daily reveal | Passed | Demo reveal activated Mystery Match. |
+| Anonymous chat | Passed | Messages synced between both users without exposing names. |
+| Identity reveal | Passed | One-sided reveal stayed hidden; mutual reveal unlocked names. |
+| Unhook | Passed | Both clients lost access to the active conversation. |
+
+The Firebase run used the temporary FastAPI/MongoDB preview backend only as a product-data bridge. Product data has not moved to Firestore yet.
 
 ## Automated Results
 
@@ -89,13 +106,14 @@ No P0 findings confirmed yet.
 - Duplicate reciprocal crushes must create at most one deterministic match.
 - Realtime listeners must remove unhooked matches quickly enough that the other user is not left inside a stale chat.
 - Firebase client error handling should distinguish recoverable network/backend failures from successful destructive actions.
+- Firebase Auth migration must preserve the same local preview user mapping for Alex and Jordan by verified phone-number claim before product data moves to Firestore.
 
 ## Remaining Temporary Limitations
 
 - Preview app uses polling instead of Firestore realtime listeners.
 - Preview API does not implement production-grade offline queueing.
 - Preview API/MongoDB remain local-only and must not become production dependencies.
-- Manual two-simulator edge testing is still required before this branch is considered complete.
+- Additional manual edge testing should be repeated after Firestore listeners replace polling.
 - Codex sandbox cannot call `127.0.0.1:8000`; live edge tests must run from normal Terminal.
 
 ## Commands For Live Edge Validation

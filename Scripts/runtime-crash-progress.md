@@ -213,7 +213,7 @@ Use iOS Simulator and verify:
 Use fake data only:
 
 ```text
-Phone: +15555550100 or another fake number
+Phone: +12025550100 or another fake number
 OTP: 123456
 ```
 

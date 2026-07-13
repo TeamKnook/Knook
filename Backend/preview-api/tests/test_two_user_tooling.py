@@ -21,8 +21,8 @@ def test_test_user_hashes_are_stable_and_distinct():
     user_a = tooling.TEST_USERS["USER_A"]
     user_b = tooling.TEST_USERS["USER_B"]
 
-    assert tooling.normalize_phone("(555) 555-0100") == "5555550100"
-    assert tooling.normalize_phone(user_a["phone"]) == "+15555550100"
+    assert tooling.normalize_phone("(202) 555-0100") == "2025550100"
+    assert tooling.normalize_phone(user_a["phone"]) == "+12025550100"
     assert tooling.phone_hash(user_a["phone"]) != tooling.phone_hash(user_b["phone"])
     assert len(tooling.phone_hash(user_a["phone"])) == 64
 

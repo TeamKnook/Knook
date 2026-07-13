@@ -1,10 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { firestoreService } from '@/src/services/firestore/firestoreService';
 import { authService } from '@/src/services/auth/authService';
 import type { User } from '@/src/models';
-
-const UID_KEY = 'knook.uid';
 
 export interface AuthState {
   loading: boolean;
@@ -16,7 +13,7 @@ export function useAuth() {
   const [state, setState] = useState<AuthState>({ loading: true, uid: null, user: null });
 
   const refresh = useCallback(async () => {
-    const uid = await AsyncStorage.getItem(UID_KEY);
+    const uid = await authService.getCurrentUid();
     if (!uid) {
       setState({ loading: false, uid: null, user: null });
       return;
@@ -32,6 +29,14 @@ export function useAuth() {
 
   useEffect(() => {
     void refresh();
+    const unsubscribe = authService.subscribe((user) => {
+      if (!user) {
+        setState({ loading: false, uid: null, user: null });
+        return;
+      }
+      void refresh();
+    });
+    return unsubscribe;
   }, [refresh]);
 
   const signOut = useCallback(async () => {

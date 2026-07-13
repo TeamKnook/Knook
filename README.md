@@ -19,7 +19,7 @@ Knook/
 
 ## Current Status
 
-This branch integrates the Emergent-generated MVP as a reviewable base while preserving the existing Knook documentation, design system, GitHub templates, and editor configuration.
+Knook runs locally as the custom native `Knook Dev` iOS development build. The current integration baseline includes the stabilized Emergent-generated MVP, pre-reveal privacy fixes, native development build workflow, edge-case validation, and Firebase Phone Auth foundation work.
 
 ## Production Stack Direction
 
@@ -44,6 +44,35 @@ Preview-only protections:
 - Preview auth accepts only `DEMO_OTP_CODE`.
 - Preview sessions use signed JWTs instead of raw user IDs.
 - The local reveal helper requires `DEMO_MODE=true` and authenticated access.
+
+## Firebase Auth Foundation
+
+Knook now supports Firebase Phone Authentication in the custom `Knook Dev` build while product data remains on the temporary FastAPI/MongoDB preview backend.
+
+The mobile app supports explicit auth-provider selection:
+
+```env
+AUTH_PROVIDER=firebase
+AUTH_PROVIDER=preview
+```
+
+The temporary preview API supports matching backend modes:
+
+```env
+AUTH_MODE=firebase
+AUTH_MODE=preview
+```
+
+Firebase mode requires human-supplied Firebase Console configuration files and local Firebase Admin credentials. See:
+
+- [Firebase Auth Current State](Docs/Firebase/FIREBASE_AUTH_CURRENT_STATE.md)
+- [Firebase Environments](Docs/Firebase/FIREBASE_ENVIRONMENTS.md)
+- [Firebase Console Setup](Docs/Firebase/FIREBASE_CONSOLE_SETUP.md)
+- [Firebase Admin Local Setup](Docs/Firebase/FIREBASE_ADMIN_LOCAL_SETUP.md)
+- [Firebase Phone Auth Migration](Docs/Firebase/FIREBASE_PHONE_AUTH_MIGRATION.md)
+- [Phone Auth Privacy Requirements](Docs/Firebase/PHONE_AUTH_PRIVACY_REQUIREMENTS.md)
+
+The development Firebase project currently validated locally is `knook-e2c74`, with fictional Firebase Console test numbers for Alex and Jordan. Real user SMS, physical-device behavior, and Android Firebase Phone Auth remain separate follow-up validation items.
 
 ## Local Setup
 
@@ -103,6 +132,14 @@ cd Mobile
 source ~/.zshrc
 nvm use 20
 APP_VARIANT=development npx expo run:ios
+```
+
+After adding Firebase native config files or changing Firebase native packages, regenerate the native project locally before rebuilding:
+
+```bash
+cd Mobile
+APP_VARIANT=development AUTH_PROVIDER=firebase npx expo prebuild --clean
+APP_VARIANT=development AUTH_PROVIDER=firebase npx expo run:ios
 ```
 
 Run backend tests:
