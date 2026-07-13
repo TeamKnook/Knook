@@ -8,6 +8,7 @@
 
 import Constants, { ExecutionEnvironment } from "expo-constants";
 import { useFonts } from "expo-font";
+import { Outfit_700Bold, Outfit_900Black } from "@expo-google-fonts/outfit";
 
 const ICON_VECTOR_VERSION = "15.1.1";
 
@@ -46,7 +47,11 @@ const iconFontMap = (): Record<string, string> =>
 
 export const useIconFonts = (): readonly [boolean, Error | null] =>
   useFonts(
-    Constants.executionEnvironment === ExecutionEnvironment.StoreClient
-      ? iconFontMap()
-      : {},
+    {
+      Outfit_700Bold,
+      Outfit_900Black,
+      ...(Constants.executionEnvironment === ExecutionEnvironment.StoreClient
+        ? iconFontMap()
+        : {}),
+    },
   );

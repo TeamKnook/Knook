@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { ScreenContainer, PrimaryButton, GhostButton, KnookCard } from '@/src/components';
+import { ScreenContainer, PrimaryButton, GhostButton, KnookCard, KnookIllustration } from '@/src/components';
 import { firestoreService } from '@/src/services/firestore/firestoreService';
 import type { Match } from '@/src/models';
 import { colors, radius, spacing, typography } from '@/src/theme';
@@ -72,9 +71,7 @@ export default function RevealScreen() {
   return (
     <ScreenContainer testID="reveal-screen" scroll>
       <View style={styles.heroWrap}>
-        <View style={styles.heroIcon}>
-          <Ionicons name="sparkles" size={28} color={colors.knookYellow} />
-        </View>
+        <KnookIllustration state="surprise" size="medium" loop={false} testID="identity-reveal-illustration" />
         <Text style={styles.heroTitle}>
           {state === 'both' ? 'You both revealed.' :
            state === 'me'   ? 'You revealed.' :
@@ -135,11 +132,6 @@ const styles = StyleSheet.create({
   loading: { ...typography.body, color: colors.knookMidGrey, paddingTop: spacing.xl, textAlign: 'center' },
   error: { ...typography.caption, color: '#B91C1C', textAlign: 'center', marginTop: spacing.md },
   heroWrap: { alignItems: 'center', paddingTop: spacing.xl, gap: spacing.sm },
-  heroIcon: {
-    width: 72, height: 72, borderRadius: 36,
-    backgroundColor: colors.knookPurple, alignItems: 'center', justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
   heroTitle: { ...typography.h1, color: colors.knookDark, textAlign: 'center' },
   heroSub: { ...typography.bodyLg, color: colors.knookMidGrey, textAlign: 'center', paddingHorizontal: spacing.lg },
   card: { marginTop: spacing.xl, gap: spacing.sm },

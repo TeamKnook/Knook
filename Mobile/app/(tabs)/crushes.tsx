@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { ScreenContainer, SectionHeader, EmptyState, PrimaryButton, KnookCard } from '@/src/components';
+import { ScreenContainer, SectionHeader, EmptyState, PrimaryButton, KnookCard, KnookIllustration } from '@/src/components';
 import { useCrushes } from '@/src/hooks/useCrushes';
 import { useMatches } from '@/src/hooks/useMatches';
 import { colors, radius, spacing, typography } from '@/src/theme';
@@ -76,7 +76,7 @@ export default function CrushesScreen() {
         ListEmptyComponent={
           !loading ? (
             <EmptyState
-              icon="heart-outline"
+              illustration={<KnookIllustration state="binoculars" size="medium" testID="crushes-empty-illustration" />}
               title="No crushes yet"
               description="Add up to 30 people from your contacts. Only mutual crushes are revealed at 6:30 PM IST."
               testID="crushes-empty"

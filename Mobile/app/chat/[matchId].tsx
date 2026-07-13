@@ -10,6 +10,7 @@ import type { Message } from '@/src/models';
 import { colors, radius, spacing, typography } from '@/src/theme';
 import { formatChatTime } from '@/src/utils/timeUtils';
 import { diagnostics } from '@/src/utils/diagnostics';
+import { KnookIllustration } from '@/src/components';
 
 export default function ChatScreen() {
   const router = useRouter();
@@ -135,6 +136,7 @@ export default function ChatScreen() {
           }}
           ListEmptyComponent={
             <View style={styles.empty}>
+              <KnookIllustration state="cupid" size="medium" testID="anonymous-chat-illustration" />
               <Text style={styles.emptyTitle}>Say hello, anonymously.</Text>
               <Text style={styles.emptySub}>Real names appear only after you both reveal.</Text>
             </View>
@@ -168,6 +170,7 @@ export default function ChatScreen() {
       {confirmUnhook ? (
         <View style={styles.sheetBackdrop} testID="unhook-sheet">
           <View style={styles.sheet}>
+            <KnookIllustration state="unhook" size="medium" loop={false} testID="unhook-illustration" />
             <Text style={styles.sheetTitle}>Unhook this match?</Text>
             <Text style={styles.sheetBody}>
               This deletes the chat for both of you and removes the match. It cannot be undone.

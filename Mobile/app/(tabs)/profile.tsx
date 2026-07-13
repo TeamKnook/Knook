@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ScreenContainer, SectionHeader, KnookCard, GhostButton, PrimaryButton } from '@/src/components';
+import { ScreenContainer, SectionHeader, KnookCard, GhostButton, PrimaryButton, KnookIllustration } from '@/src/components';
 import { useAuth } from '@/src/hooks/useAuth';
 import { colors, spacing, typography } from '@/src/theme';
 
@@ -11,6 +11,7 @@ export default function ProfileTab() {
   return (
     <ScreenContainer testID="profile-screen" scroll>
       <SectionHeader eyebrow="You" title={user?.name || 'Your profile'} subtitle="Visible only after mutual reveal." />
+      <KnookIllustration state="mirror" size="medium" testID="profile-illustration" />
 
       <KnookCard style={styles.card} testID="profile-summary-card">
         <Row label="Phone" value={user ? `•••• ${user.phoneLast4 || '—'}` : '—'} />
