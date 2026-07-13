@@ -1,6 +1,6 @@
 /**
  * detectMutualCrush
- * Triggered when a new crush document is created at
+ * Triggered when a crush document is created or reactivated at
  *   users/{uid}/crushes/{phoneHash}
  *
  * If the target user (whose users.phoneHash == the crushed phoneHash) has
@@ -15,8 +15,12 @@ const db = admin.firestore;
 
 export const detectMutualCrush = functions.firestore
   .document('users/{uid}/crushes/{phoneHash}')
-  .onCreate(async (snap, context) => {
+  .onWrite(async (change, context) => {
     const { uid, phoneHash } = context.params as { uid: string; phoneHash: string };
+    if (!change.after.exists) return;
+
+    const crush = change.after.data();
+    if (!crush || crush.status !== 'pending') return;
 
     const meSnap = await db().doc(`users/${uid}`).get();
     const me = meSnap.data();
@@ -44,8 +48,9 @@ export const detectMutualCrush = functions.firestore
     await db().runTransaction(async (transaction) => {
       const matchSnap = await transaction.get(matchRef);
 
-      if (!matchSnap.exists) {
-        transaction.create(matchRef, {
+      const matchData = matchSnap.exists ? matchSnap.data() : null;
+      if (!matchSnap.exists || matchData?.status === 'unhooked' || matchData?.status === 'expired') {
+        transaction.set(matchRef, {
           matchId,
           userA: participants[0],
           userB: participants[1],
@@ -61,10 +66,11 @@ export const detectMutualCrush = functions.firestore
           firstMessageSentAt: null,
           createdAt: now,
           updatedAt: now,
-        });
+          revealedNames: {},
+        }, { merge: false });
       }
 
-      transaction.update(snap.ref, { status: 'matched', matchId, updatedAt: now });
+      transaction.update(change.after.ref, { status: 'matched', matchId, updatedAt: now });
       transaction.update(reverseRef, { status: 'matched', matchId, updatedAt: now });
     });
 

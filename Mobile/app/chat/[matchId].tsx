@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMessages } from '@/src/hooks/useMessages';
 import { firestoreService } from '@/src/services/firestore/firestoreService';
+import { getUid } from '@/src/services/api';
 import type { Message } from '@/src/models';
 import { colors, radius, spacing, typography } from '@/src/theme';
 import { formatChatTime } from '@/src/utils/timeUtils';
@@ -18,7 +19,12 @@ export default function ChatScreen() {
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [confirmUnhook, setConfirmUnhook] = useState(false);
+  const [viewerUid, setViewerUid] = useState<string | null>(null);
   const listRef = useRef<FlatList<Message>>(null);
+
+  useEffect(() => {
+    void getUid().then(setViewerUid);
+  }, []);
 
   useEffect(() => {
     if (messages.length) {
@@ -112,7 +118,7 @@ export default function ChatScreen() {
           keyExtractor={(m) => m.messageId}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => {
-            const mine = match?.otherUid ? item.senderId !== match.otherUid : false;
+            const mine = viewerUid ? item.senderId === viewerUid : item.senderId !== match?.otherUid;
             return (
               <View style={[styles.bubbleRow, mine ? styles.right : styles.left]}>
                 <View

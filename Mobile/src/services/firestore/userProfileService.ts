@@ -11,6 +11,7 @@ import {
 import { api } from '@/src/services/api';
 import type { User } from '@/src/models';
 import { diagnostics } from '@/src/utils/diagnostics';
+import { sha256 } from '@/src/utils/sha256';
 import { getKnookFirestore } from './firebaseFirestore';
 import {
   USER_PROFILE_SCHEMA_VERSION,
@@ -51,6 +52,7 @@ function fromSnapshotData(uid: string, data: Record<string, unknown> | undefined
     uid,
     phoneNumberE164: String(data.phoneNumberE164 ?? ''),
     phoneLast4: String(data.phoneLast4 ?? ''),
+    phoneHash: String(data.phoneHash ?? ''),
     onboardingCompleted: Boolean(data.onboardingCompleted),
     onboardingCompletedAt: (data.onboardingCompletedAt ?? null) as KnookUserProfile['onboardingCompletedAt'],
     firstName: typeof data.firstName === 'string' ? data.firstName : null,
@@ -128,15 +130,29 @@ export const userProfileService = {
   async createUserProfileFromAuth(firebaseUser?: FirebaseAuthUser): Promise<KnookUserProfile> {
     const user = firebaseUser ?? currentFirebaseUser();
     const existing = await this.getCurrentUserProfile(user.uid);
-    if (existing) return existing;
 
     const phoneNumber = user.phoneNumber;
     if (!phoneNumber) throw new Error('Firebase phone number is missing');
+    const hash = sha256(phoneNumber);
+
+    if (existing) {
+      if (!existing.phoneHash) {
+        await setDoc(
+          profileRef(user.uid),
+          { phoneHash: hash, updatedAt: serverTimestamp() },
+          { merge: true },
+        );
+        const backfilled = await this.getCurrentUserProfile(user.uid);
+        if (backfilled) return backfilled;
+      }
+      return existing;
+    }
 
     await setDoc(profileRef(user.uid), {
       uid: user.uid,
       phoneNumberE164: phoneNumber,
       phoneLast4: phoneLast4(phoneNumber),
+      phoneHash: hash,
       onboardingCompleted: false,
       onboardingCompletedAt: null,
       firstName: null,

@@ -21,6 +21,7 @@ export interface KnookUserProfile {
   uid: string;
   phoneNumberE164: string;
   phoneLast4: string;
+  phoneHash: string;
   onboardingCompleted: boolean;
   onboardingCompletedAt: ProfileTimestamp;
   firstName: string | null;

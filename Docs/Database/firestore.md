@@ -1,181 +1,136 @@
 # Firestore Documentation
 
-This document is a planning reference only. It does not create Firebase collections, indexes, or rules.
+This document describes the current Firebase data model. Rules and indexes live under `/Users/Amoux/Documents/Knook/firebase`.
 
-## Collection: users
+## Collection: `users`
 
 ### Purpose
 
-Stores public and private user profile data required for account, discovery, and matching flows.
+Stores private account and profile data for the signed-in user. There are no public profile documents yet.
 
 ### Fields
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
-| id | string | Yes | Matches Firebase Auth UID |
-| displayName | string | Yes | User-visible name |
-| photoURL | string | No | Profile image URL |
-| bio | string | No | Short profile text |
-| status | string | Yes | Example: active, paused, deleted |
-| createdAt | timestamp | Yes | Server timestamp |
-| updatedAt | timestamp | Yes | Server timestamp |
+| `uid` | string | Yes | Matches Firebase Auth UID |
+| `phoneNumberE164` | string | Yes | Verified Firebase Auth phone number |
+| `phoneLast4` | string | Yes | Debug/support display only |
+| `phoneHash` | string | Yes | Deterministic hash used for reciprocal crush detection |
+| `firstName` | string | No | Visible only to self until mutual reveal copies it to a match |
+| `age` | number | No | Profile basics |
+| `gender` | string | No | Profile basics |
+| `interestedIn` | string | No | Profile basics |
+| `vibeAnswers` | map | Yes | Personality/profile answers |
+| `favouriteShow` | string | No | Later supports anonymous character-name ideas |
+| `onboardingCompleted` | boolean | Yes | Controls routing |
+| `accountStatus` | string | Yes | `active` or `deleted` |
+| `accessStatus` | string | Yes | Development/waitlist access status |
+| `createdAt` | timestamp | Yes | Server timestamp |
+| `updatedAt` | timestamp | Yes | Server timestamp |
 
-### Relationships
+### Security
 
-- One `users` document maps to one Firebase Auth user.
-- A user can create many `crushes`.
-- A user can participate in many `matches` and `messages`.
+- Users can read/write only their own profile.
+- Other users cannot read profile documents directly.
+- Names are copied into a match only after mutual reveal.
 
-### Indexes
-
-| Fields | Purpose |
-| --- | --- |
-| status, updatedAt | Query active users by recent activity |
-
-### Security Considerations
-
-- Users should only edit approved fields on their own profile.
-- Private fields should be separated from public discovery fields if needed.
-- Deleted or paused users should be excluded from discovery queries.
-
-## Collection: matches
+## Subcollection: `users/{uid}/crushes/{phoneHash}`
 
 ### Purpose
 
-Represents a mutual connection between two users.
+Stores one user's private outgoing expression of interest.
 
 ### Fields
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
-| id | string | Yes | Match document ID |
-| userIds | string[] | Yes | Two participant user IDs |
-| status | string | Yes | active, archived, blocked |
-| createdAt | timestamp | Yes | Server timestamp |
-| updatedAt | timestamp | Yes | Server timestamp |
-| lastMessageAt | timestamp | No | Used for chat sorting |
+| `uid` | string | Yes | User who created the crush |
+| `phoneHash` | string | Yes | Target phone hash and document ID |
+| `phoneLast4` | string | Yes | Debug/support display only |
+| `status` | string | Yes | `pending`, `matched`, `unhooked`, `expired` |
+| `matchId` | string | No | Set by Cloud Functions after reciprocal detection |
+| `crushedAt` | timestamp | Yes | Server timestamp |
+| `expiresAt` | timestamp | Yes | 30-day expiry marker |
+| `renewedAt` | timestamp | No | Set on repeat add |
+| `createdAt` | timestamp | Yes | Server timestamp |
+| `updatedAt` | timestamp | Yes | Server timestamp |
 
-### Relationships
+### Security
 
-- A match references two `users`.
-- A match can contain many `messages`.
+- Users can read only their own outgoing crushes.
+- Users cannot read incoming crushes.
+- Raw phone numbers are not stored in crush documents.
+- Match creation is handled by Cloud Functions.
 
-### Indexes
-
-| Fields | Purpose |
-| --- | --- |
-| userIds, status, updatedAt | List active matches for a user |
-| userIds, lastMessageAt | Sort conversations by recent message |
-
-### Security Considerations
-
-- Only participants should read a match.
-- Only trusted backend logic should create a match from mutual interest.
-- Blocked or archived states should restrict messaging.
-
-## Collection: crushes
+## Collection: `matches`
 
 ### Purpose
 
-Stores one user's expression of interest in another user.
+Represents a mutual connection between two users. Created by Cloud Functions only.
 
 ### Fields
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
-| id | string | Yes | Crush document ID |
-| fromUserId | string | Yes | User who created the crush |
-| toUserId | string | Yes | Target user |
-| status | string | Yes | pending, matched, withdrawn |
-| createdAt | timestamp | Yes | Server timestamp |
-| updatedAt | timestamp | Yes | Server timestamp |
+| `matchId` | string | Yes | Deterministic sorted participant IDs |
+| `participants` | string[] | Yes | Two participant user IDs |
+| `userA` | string | Yes | Sorted participant A |
+| `userB` | string | Yes | Sorted participant B |
+| `status` | string | Yes | `pending_reveal`, `active`, `unhooked`, `expired` |
+| `matchedAt` | timestamp | Yes | Created when reciprocal crush exists |
+| `revealedAt` | timestamp | No | Set when daily reveal activates |
+| `matchExpiresAt` | timestamp | No | Reveal expiry |
+| `revealedBy` | string[] | Yes | Participants who chose identity reveal |
+| `mutualReveal` | boolean | Yes | True only after both reveal |
+| `revealedNames` | map | No | Names copied by function after mutual reveal |
+| `lastMessageAt` | timestamp | No | Used for chat sorting |
+| `lastMessagePreview` | string | No | Generic chat preview |
+| `firstMessageSentAt` | timestamp | No | First message marker |
+| `createdAt` | timestamp | Yes | Server timestamp |
+| `updatedAt` | timestamp | Yes | Server timestamp |
 
-### Relationships
+### Security
 
-- A crush references two `users`.
-- Two reciprocal crushes may create one `match`.
+- Only active-match participants can read a match.
+- Pending reveal matches are hidden from clients.
+- Clients cannot directly create or update match documents.
+- Unhooked states reject chat/message access.
 
-### Indexes
-
-| Fields | Purpose |
-| --- | --- |
-| fromUserId, toUserId | Prevent duplicate crushes |
-| toUserId, status | Detect reciprocal interest |
-
-### Security Considerations
-
-- Users should not read incoming crushes if the product requires secrecy.
-- Users should only create or withdraw their own outgoing crushes.
-- Match creation should be handled by trusted backend logic.
-
-## Collection: messages
+## Subcollection: `matches/{matchId}/messages/{messageId}`
 
 ### Purpose
 
-Stores chat messages between matched users.
+Stores chat messages under active matches.
 
 ### Fields
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
-| id | string | Yes | Message document ID |
-| matchId | string | Yes | Parent match ID |
-| senderId | string | Yes | User who sent the message |
-| body | string | Yes | Message content |
-| type | string | Yes | text, system, media |
-| createdAt | timestamp | Yes | Server timestamp |
-| readBy | map | No | User ID to timestamp |
+| `messageId` | string | Yes | Message document ID |
+| `matchId` | string | Yes | Parent match ID |
+| `senderId` | string | Yes | User who sent the message |
+| `type` | string | Yes | Currently `text` |
+| `text` | string | Yes | Message body |
+| `sentAt` | timestamp | Yes | Server timestamp |
+| `readBy` | string[] | Yes | User IDs that have read the message |
+| `deletedAt` | timestamp | No | Soft-delete marker after Unhook |
 
-### Relationships
+### Security
 
-- A message belongs to one `match`.
-- A message sender must be a match participant.
+- Only active-match participants can read non-deleted messages.
+- Users can create messages only as themselves.
+- Clients cannot edit or delete messages directly.
 
-### Indexes
+## Request Collections
 
-| Fields | Purpose |
+Clients create these documents; Cloud Functions perform the privileged work.
+
+| Collection | Purpose |
 | --- | --- |
-| matchId, createdAt | Load messages in chronological order |
-| senderId, createdAt | Moderation or account history review |
+| `revealRequests` | Add the current user to a match's reveal state |
+| `unhookRequests` | Unhook a match and clean up related data |
+| `devRevealRequests` | Development-only manual reveal trigger |
 
-### Security Considerations
+## Temporary Preview Collections
 
-- Only match participants should read messages.
-- Users should only create messages as themselves.
-- Message body length and type should be validated.
-- Consider moderation, reporting, and retention requirements.
-
-## Collection: waitlist
-
-### Purpose
-
-Stores early access or launch waitlist signups.
-
-### Fields
-
-| Field | Type | Required | Notes |
-| --- | --- | --- | --- |
-| id | string | Yes | Waitlist document ID |
-| email | string | Yes | Signup email |
-| name | string | No | Optional name |
-| source | string | No | Campaign or referral source |
-| status | string | Yes | pending, invited, rejected |
-| createdAt | timestamp | Yes | Server timestamp |
-
-### Relationships
-
-- A waitlist entry may become a `users` document after invitation and signup.
-
-### Indexes
-
-| Fields | Purpose |
-| --- | --- |
-| email | Prevent duplicate signups |
-| status, createdAt | Process invitations in order |
-
-### Security Considerations
-
-- Public writes should be heavily validated and rate-limited.
-- Public reads should not be allowed.
-- Email addresses should be treated as private data.
-
+FastAPI/MongoDB remains available only behind `PRODUCT_DATA_PROVIDER=preview` while this migration is validated.

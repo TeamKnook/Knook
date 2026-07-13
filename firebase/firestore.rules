@@ -15,6 +15,7 @@ service cloud.firestore {
         'uid',
         'phoneNumberE164',
         'phoneLast4',
+        'phoneHash',
         'onboardingCompleted',
         'onboardingCompletedAt',
         'firstName',
@@ -40,8 +41,57 @@ service cloud.firestore {
       return request.resource.data.uid == resource.data.uid
         && request.resource.data.phoneNumberE164 == resource.data.phoneNumberE164
         && request.resource.data.phoneLast4 == resource.data.phoneLast4
+        && request.resource.data.phoneHash == resource.data.phoneHash
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.schemaVersion == resource.data.schemaVersion;
+    }
+
+    function allowedCrushFields() {
+      return [
+        'uid',
+        'phoneHash',
+        'phoneLast4',
+        'status',
+        'crushedAt',
+        'expiresAt',
+        'renewedAt',
+        'matchId',
+        'createdAt',
+        'updatedAt'
+      ];
+    }
+
+    function crushWriteIsPrivatePending(uid, phoneHash) {
+      return request.resource.data.keys().hasOnly(allowedCrushFields())
+        && request.resource.data.uid == uid
+        && request.resource.data.phoneHash == phoneHash
+        && request.resource.data.phoneLast4 is string
+        && request.resource.data.status == 'pending'
+        && request.resource.data.matchId == null;
+    }
+
+    function matchDoc(matchId) {
+      return get(/databases/$(database)/documents/matches/$(matchId));
+    }
+
+    function activeParticipant(matchId) {
+      return signedIn()
+        && matchDoc(matchId).data.status == 'active'
+        && request.auth.uid in matchDoc(matchId).data.participants;
+    }
+
+    function allowedMessageFields() {
+      return [
+        'messageId',
+        'matchId',
+        'senderId',
+        'type',
+        'text',
+        'sentAt',
+        'readBy',
+        'creditsCharged',
+        'deletedAt'
+      ];
     }
 
     match /users/{uid} {
@@ -51,11 +101,69 @@ service cloud.firestore {
         && request.resource.data.uid == uid
         && request.resource.data.phoneNumberE164 is string
         && request.resource.data.phoneLast4 is string
+        && request.resource.data.phoneHash is string
         && request.resource.data.schemaVersion == 1;
       allow update: if isOwner(uid)
         && hasOnlyProfileFields()
         && immutableProfileFieldsUnchanged();
       allow delete: if false;
+
+      match /crushes/{phoneHash} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid)
+          && crushWriteIsPrivatePending(uid, phoneHash);
+        allow update: if isOwner(uid)
+          && resource.data.uid == uid
+          && resource.data.phoneHash == phoneHash
+          && resource.data.status in ['pending', 'unhooked', 'expired']
+          && request.resource.data.createdAt == resource.data.createdAt
+          && crushWriteIsPrivatePending(uid, phoneHash);
+        allow delete: if false;
+      }
+    }
+
+    match /matches/{matchId} {
+      allow read: if activeParticipant(matchId);
+      allow create, update, delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if activeParticipant(matchId)
+          && resource.data.deletedAt == null;
+        allow create: if activeParticipant(matchId)
+          && request.resource.data.keys().hasOnly(allowedMessageFields())
+          && request.resource.data.messageId == messageId
+          && request.resource.data.matchId == matchId
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.type == 'text'
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 1000
+          && request.resource.data.readBy is list
+          && request.resource.data.readBy.size() == 1
+          && request.resource.data.readBy[0] == request.auth.uid
+          && request.resource.data.deletedAt == null;
+        allow update, delete: if false;
+      }
+    }
+
+    match /revealRequests/{requestId} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.matchId is string;
+      allow read, update, delete: if false;
+    }
+
+    match /unhookRequests/{requestId} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.matchId is string;
+      allow read, update, delete: if false;
+    }
+
+    match /devRevealRequests/{requestId} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid;
+      allow read, update, delete: if false;
     }
 
     match /{document=**} {

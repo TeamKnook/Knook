@@ -78,6 +78,8 @@ assert.match(profileService, /doc\(getKnookFirestore\(\), 'users', uid\)/);
 assert.match(profileService, /assertOwnProfile\(uid\)/);
 assert.match(profileService, /phoneNumber = user\.phoneNumber/);
 assert.match(profileService, /phoneNumberE164: phoneNumber/);
+assert.match(profileService, /hash = sha256\(phoneNumber\)/);
+assert.match(profileService, /phoneHash: hash/);
 assert.match(profileService, /schemaVersion: USER_PROFILE_SCHEMA_VERSION/);
 assert.match(profileService, /syncPreviewProfile/);
 assert.doesNotMatch(profileService, /phoneNumberE164:\s*input/);

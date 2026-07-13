@@ -35,17 +35,16 @@ Move Knook from the temporary local preview implementation to the intended Fireb
 
 ## 4. Crush Storage In Firestore
 
-- Current temporary implementation: MongoDB `crushes` collection.
-- Target Firebase implementation: `users/{uid}/crushes/{phoneHash}` documents.
-- Affected files: `Mobile/src/services/firestore/firestoreService.ts`, `Backend/functions/src/crushes/detectMutualCrush.ts`, Firestore rules.
+- Current migration: `PRODUCT_DATA_PROVIDER=firebase` writes outgoing crushes to `users/{uid}/crushes/{phoneHash}`.
+- Temporary compatibility: preview API remains available behind `PRODUCT_DATA_PROVIDER=preview`.
+- Affected files: `Mobile/src/services/firestore/firestoreService.ts`, `Mobile/src/services/firestore/firebaseProductDataService.ts`, `Backend/functions/src/crushes/detectMutualCrush.ts`, Firestore rules.
 - Risks: storing raw phone numbers, duplicate crushes, weak permissions.
 - Validation criteria: raw phone/name is not stored; duplicate crush add is idempotent; 30-day expiry fields exist.
-- Rollback strategy: leave preview `addCrush` route available until Firestore writes are verified.
+- Rollback strategy: set `PRODUCT_DATA_PROVIDER=preview`.
 
 ## 5. Deterministic Mutual Match Creation
 
-- Current temporary implementation: preview API detects mutual crushes and creates deterministic match IDs from sorted participant UIDs.
-- Target Firebase implementation: Cloud Function creates `matches/{sortedUidA_sortedUidB}` in a transaction.
+- Current migration: Cloud Function creates `matches/{sortedUidA_sortedUidB}` in a transaction from reciprocal pending crushes.
 - Affected files: `Backend/functions/src/crushes/detectMutualCrush.ts`, Firestore indexes/rules.
 - Risks: duplicate matches during simultaneous reciprocal writes.
 - Validation criteria: repeated or simultaneous mutual crush writes create at most one match, and duplicate crush submissions do not create duplicate visible cards or match records.
@@ -53,12 +52,11 @@ Move Knook from the temporary local preview implementation to the intended Fireb
 
 ## 6. Daily Reveal Cloud Function
 
-- Current temporary implementation: authenticated demo route `/api/dev/trigger-reveal`.
-- Target Firebase implementation: scheduled Cloud Function at 6:30 PM IST.
+- Current migration: scheduled Cloud Function activates pending matches at 6:30 PM IST. Development reveal creates `devRevealRequests` processed by a function.
 - Affected files: `Backend/functions/src/reveal/dailyReveal.ts`, scheduled function config.
 - Risks: wrong timezone, revealing early, expiry based on `matchedAt` instead of `revealedAt`, repeated reveal execution extending expiry.
 - Validation criteria: `pending_reveal` changes to `active` only at the scheduled reveal; `matchExpiresAt` equals `revealedAt + 48h`; repeated execution leaves `revealedAt` and `matchExpiresAt` unchanged.
-- Rollback strategy: pause scheduled function and manually inspect pending matches before re-enabling.
+- Rollback strategy: pause scheduled function and set `PRODUCT_DATA_PROVIDER=preview`.
 
 ## 7. Realtime Match Listeners
 
@@ -71,30 +69,27 @@ Move Knook from the temporary local preview implementation to the intended Fireb
 
 ## 8. Firestore Chat
 
-- Current temporary implementation: MongoDB `messages` collection through preview API.
-- Target Firebase implementation: `matches/{matchId}/messages/{messageId}` subcollections.
-- Affected files: `Mobile/src/hooks/useMessages.ts`, `Mobile/app/chat/[matchId].tsx`, Firestore rules.
+- Current migration: `matches/{matchId}/messages/{messageId}` stores text messages; Cloud Functions update match previews.
+- Affected files: `Mobile/src/hooks/useMessages.ts`, `Mobile/app/chat/[matchId].tsx`, `Mobile/src/services/firestore/firebaseProductDataService.ts`, Firestore rules.
 - Risks: unauthorized reads, message writes after unhook, identity leakage.
-- Validation criteria: only participants can read/write active chats; first message disables expiry.
-- Rollback strategy: keep preview chat route while validating Firestore rules in emulator.
+- Validation criteria: only participants can read/write active chats; first message stamps match preview.
+- Rollback strategy: set `PRODUCT_DATA_PROVIDER=preview`.
 
 ## 9. Reveal Logic
 
-- Current temporary implementation: preview route updates `revealedBy` and `mutualReveal`.
-- Target Firebase implementation: callable function or guarded Firestore write that adds the current uid to `revealedBy`.
-- Affected files: `Mobile/app/reveal/[matchId].tsx`, `Mobile/src/services/firestore/firestoreService.ts`, Cloud Functions/rules.
+- Current migration: clients create `revealRequests`; Cloud Functions verify participants and update `revealedBy`.
+- Affected files: `Mobile/app/reveal/[matchId].tsx`, `Mobile/src/services/firestore/firebaseProductDataService.ts`, Cloud Functions/rules.
 - Risks: client spoofing another participant, exposing names too early, duplicate reveal writes leaving one client stuck.
 - Validation criteria: only own reveal state can be changed; repeated reveal taps store each uid once; names appear only after both users reveal; mutual reveal survives refresh/restart.
-- Rollback strategy: disable reveal write path while preserving anonymous chat.
+- Rollback strategy: set `PRODUCT_DATA_PROVIDER=preview`.
 
 ## 10. Unhook Cleanup
 
-- Current temporary implementation: preview route marks match and crushes unhooked and soft-deletes messages.
-- Target Firebase implementation: callable function updates match, crush mirrors, and message deletion markers atomically enough for user safety.
-- Affected files: `Backend/functions/src/matches/handleUnhook.ts`, `Mobile/app/chat/[matchId].tsx`.
+- Current migration: clients create `unhookRequests`; Cloud Functions mark the match unhooked, soft-delete messages, and mirror crush docs.
+- Affected files: `Backend/functions/src/matches/handleUnhookRequest.ts`, `Mobile/app/chat/[matchId].tsx`.
 - Risks: partial cleanup, notification leakage, stale chat visible to other participant, direct stale match ID access after Unhook.
 - Validation criteria: match disappears for both users; stale match reads and message reads/writes are rejected; messages are inaccessible; no notification is sent.
-- Rollback strategy: keep unhook function disabled until emulator tests cover both users.
+- Rollback strategy: set `PRODUCT_DATA_PROVIDER=preview`.
 
 ## 11. FCM
 

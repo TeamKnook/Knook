@@ -7,6 +7,8 @@ Knook's product promise depends on hiding reciprocity, identity, and unhook inte
 - The backend may detect a mutual crush before reveal.
 - The backend may create a match with `status = pending_reveal`.
 - A `pending_reveal` match must be indistinguishable from a one-sided crush in all user-facing UI.
+- Firestore rules must prevent clients from reading `pending_reveal` match documents directly.
+- Users must never be able to read incoming crush documents.
 - Do not show matched badges, matched counts, success styling, match IDs, chat entry points, or reciprocity copy before reveal.
 - Neutral pre-reveal copy should use language such as `Added privately` and `You'll only know if it's mutual during the daily reveal.`
 

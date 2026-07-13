@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit",
     "test:auth": "node ./scripts/auth-foundation-tests.js",
     "test:profiles": "node ./scripts/firestore-profile-tests.js",
+    "test:product-data": "node ./scripts/firestore-product-data-tests.js",
     "test:runtime": "node ./scripts/runtime-stability-tests.js",
     "test:privacy": "node ./scripts/pre-reveal-privacy-tests.js"
   },

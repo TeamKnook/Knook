@@ -1,15 +1,24 @@
-/**
- * Firestore-shaped service. Backed by the FastAPI adapter in preview.
- *
- * TODO(real-firebase): swap each method for the corresponding Firestore
- * call using @react-native-firebase/firestore. The function signatures
- * are kept identical so the screens never change.
- */
 import { api } from '../api';
 import { authService } from '@/src/services/auth/authService';
 import type { Crush, Match, Message, User } from '@/src/models';
 import { appEnvironment } from '@/src/utils/environment';
+import { firebaseProductDataService } from './firebaseProductDataService';
 import { mapProfileToUser, userProfileService } from './userProfileService';
+
+const productDataService = appEnvironment.usesFirebaseProductData
+  ? firebaseProductDataService
+  : {
+      addCrush: (phone: string) => api.post<Crush>('/crushes', { phone }),
+      listCrushes: () => api.get<Crush[]>('/crushes'),
+      listMatches: () => api.get<Match[]>('/matches'),
+      getMatch: (matchId: string) => api.get<Match>(`/matches/${matchId}`),
+      reveal: (matchId: string) => api.post<Match>(`/matches/${matchId}/reveal`),
+      unhook: (matchId: string) => api.post<{ ok: boolean }>(`/matches/${matchId}/unhook`),
+      listMessages: (matchId: string) => api.get<Message[]>(`/matches/${matchId}/messages`),
+      sendMessage: (matchId: string, text: string) =>
+        api.post<Message>(`/matches/${matchId}/messages`, { text }),
+      triggerDailyReveal: () => api.post<{ updated: number }>('/dev/trigger-reveal'),
+    };
 
 export const firestoreService = {
   // users
@@ -24,20 +33,19 @@ export const firestoreService = {
   updateMe: (patch: Partial<User>) => api.put<User>('/users/me', patch),
 
   // crushes
-  addCrush: (phone: string) => api.post<Crush>('/crushes', { phone }),
-  listCrushes: () => api.get<Crush[]>('/crushes'),
+  addCrush: (phone: string) => productDataService.addCrush(phone),
+  listCrushes: () => productDataService.listCrushes(),
 
   // matches
-  listMatches: () => api.get<Match[]>('/matches'),
-  getMatch: (matchId: string) => api.get<Match>(`/matches/${matchId}`),
-  reveal: (matchId: string) => api.post<Match>(`/matches/${matchId}/reveal`),
-  unhook: (matchId: string) => api.post<{ ok: boolean }>(`/matches/${matchId}/unhook`),
+  listMatches: () => productDataService.listMatches(),
+  getMatch: (matchId: string) => productDataService.getMatch(matchId),
+  reveal: (matchId: string) => productDataService.reveal(matchId),
+  unhook: (matchId: string) => productDataService.unhook(matchId),
 
   // messages
-  listMessages: (matchId: string) => api.get<Message[]>(`/matches/${matchId}/messages`),
-  sendMessage: (matchId: string, text: string) =>
-    api.post<Message>(`/matches/${matchId}/messages`, { text }),
+  listMessages: (matchId: string) => productDataService.listMessages(matchId),
+  sendMessage: (matchId: string, text: string) => productDataService.sendMessage(matchId, text),
 
   // dev / demo
-  triggerDailyReveal: () => api.post<{ updated: number }>('/dev/trigger-reveal'),
+  triggerDailyReveal: () => productDataService.triggerDailyReveal(),
 };
