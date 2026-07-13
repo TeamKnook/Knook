@@ -5,6 +5,7 @@ const { withPodfile } = require('@expo/config-plugins');
 const APP_VARIANT = process.env.APP_VARIANT || 'development';
 const AUTH_PROVIDER = process.env.AUTH_PROVIDER || 'preview';
 const FIREBASE_AUTH_TARGET = process.env.FIREBASE_AUTH_TARGET || 'development';
+const APPLE_TEAM_ID = process.env.APPLE_TEAM_ID;
 
 const variants = {
   development: {
@@ -107,6 +108,12 @@ const config = {
     ios: {
       supportsTablet: true,
       bundleIdentifier: variant.iosBundleIdentifier,
+      ...(APPLE_TEAM_ID ? { appleTeamId: APPLE_TEAM_ID } : {}),
+      entitlements: {
+        'keychain-access-groups': [
+          `$(AppIdentifierPrefix)${variant.iosBundleIdentifier}`,
+        ],
+      },
       ...(hasIosFirebaseConfig ? { googleServicesFile: iosGoogleServicesFile } : {}),
       infoPlist: {
         NSContactsUsageDescription: 'Knook uses contacts only to help you privately add people you already know.',
@@ -155,6 +162,7 @@ const config = {
       productionAppName: 'Knook',
       productionBundleIdentifier: 'com.teamknook.knook',
       productionScheme: 'knook',
+      appleTeamIdConfigured: Boolean(APPLE_TEAM_ID),
     },
   },
 };

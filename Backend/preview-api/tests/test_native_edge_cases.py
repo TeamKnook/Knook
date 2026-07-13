@@ -185,3 +185,29 @@ def test_unhook_blocks_stale_match_and_message_access():
         assert stale_match.status_code == 410
         assert stale_messages.status_code == 410
         assert stale_send.status_code == 410
+
+
+def test_unhooked_pair_can_create_new_pending_reveal_match():
+    user_a, user_b, headers_a, headers_b, match_id = _create_pending_pair()
+    _reveal_pending_matches(headers_a)
+
+    unhook = _post(f"/matches/{match_id}/unhook", headers=headers_a)
+    assert unhook.status_code == 200, unhook.text
+
+    recrush_a = _post("/crushes", json={"phone": user_b["phone"]}, headers=headers_a)
+    recrush_b = _post("/crushes", json={"phone": user_a["phone"]}, headers=headers_b)
+    assert recrush_a.status_code == 200, recrush_a.text
+    assert recrush_b.status_code == 200, recrush_b.text
+    assert recrush_b.json()["matchId"] == match_id
+
+    hidden_before_reveal = _get("/matches", headers=headers_a)
+    assert hidden_before_reveal.status_code == 200, hidden_before_reveal.text
+    assert all(match["matchId"] != match_id for match in hidden_before_reveal.json())
+
+    reveal = _post("/dev/trigger-reveal", headers=headers_a)
+    assert reveal.status_code == 200, reveal.text
+    assert reveal.json()["updated"] >= 1
+
+    revealed = _find_match(headers_a, match_id)
+    assert revealed["status"] == "active"
+    assert revealed["revealedAt"]

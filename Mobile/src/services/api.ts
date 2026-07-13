@@ -63,10 +63,17 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     diagnostics.log('api-request', { method, path, hasBase: !!BASE });
     const res = await fetch(url, { ...init, headers });
     const text = await res.text();
-    const body = text ? JSON.parse(text) : null;
+    let body: unknown = null;
+    try {
+      body = text ? JSON.parse(text) : null;
+    } catch {
+      body = { detail: text || res.statusText };
+    }
     diagnostics.log('api-response', { method, path, status: res.status });
     if (!res.ok) {
-      const detail = body?.detail || res.statusText;
+      const detail = body && typeof body === 'object' && 'detail' in body
+        ? body.detail
+        : res.statusText;
       throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail));
     }
     return body as T;
@@ -74,9 +81,6 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     diagnostics.error('api-failure', error, { method, path, hasBase: !!BASE });
     if (!BASE) {
       throw new Error('Local backend URL is not configured');
-    }
-    if (error instanceof SyntaxError) {
-      throw new Error('Backend returned an invalid response');
     }
     if (error instanceof TypeError && error.message.includes('Network request failed')) {
       throw new Error('Local backend is unavailable');

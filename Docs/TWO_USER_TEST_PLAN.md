@@ -16,8 +16,8 @@ Intended production stack remains React Native, TypeScript, Expo Development Bui
 
 | Alias | Simulator | Phone | OTP | Name |
 | --- | --- | --- | --- | --- |
-| USER_A | Simulator A | +15555550100 | 123456 | Alex |
-| USER_B | Simulator B | +15555550101 | 123456 | Jordan |
+| USER_A | Simulator A | +12025550100 | 123456 | Alex |
+| USER_B | Simulator B | +12025550101 | 123456 | Jordan |
 
 ## Preflight
 

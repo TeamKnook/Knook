@@ -8,7 +8,7 @@ Use Application Default Credentials or a local service-account file referenced t
 
 ```env
 GOOGLE_APPLICATION_CREDENTIALS=/absolute/local/path/to/firebase-admin.json
-FIREBASE_PROJECT_ID=knook-development
+FIREBASE_PROJECT_ID=knook-e2c74
 AUTH_MODE=firebase
 ```
 
@@ -20,6 +20,13 @@ Never commit the service-account JSON file.
 - If a local credential file must sit near the project temporarily, ensure it is ignored by git.
 - Rotate or revoke credentials immediately if they are exposed.
 - Use least-privilege development credentials.
+- The current local development credential path used during validation was:
+
+```text
+/Users/Amoux/.config/knook/firebase/knook-development-admin.json
+```
+
+This path is intentionally outside the repository and must remain untracked.
 
 ## Project Validation
 

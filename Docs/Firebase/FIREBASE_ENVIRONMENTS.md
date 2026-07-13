@@ -6,7 +6,7 @@ Knook uses three named Firebase environments. Only `development` is intended to 
 
 | Environment | Firebase project convention | iOS bundle ID | Android package | Display name |
 | --- | --- | --- | --- | --- |
-| Development | `knook-development` | `com.teamknook.knook.dev` | `com.teamknook.knook.dev` | `Knook Dev` |
+| Development | `knook-e2c74` currently; future convention may be `knook-development` | `com.teamknook.knook.dev` | `com.teamknook.knook.dev` | `Knook Dev` |
 | Preview | `knook-preview` | `com.teamknook.knook.preview` | `com.teamknook.knook.preview` | `Knook Preview` |
 | Production | `knook-production` | `com.teamknook.knook` | `com.teamknook.knook` | `Knook` |
 

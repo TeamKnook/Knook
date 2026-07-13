@@ -23,8 +23,8 @@ ROOT = Path(__file__).resolve().parents[1]
 ENV_PATH = ROOT / "Backend" / "preview-api" / ".env"
 
 TEST_USERS = {
-    "USER_A": {"uid": "demo-user-a", "phone": "+15555550100", "name": "Alex"},
-    "USER_B": {"uid": "demo-user-b", "phone": "+15555550101", "name": "Jordan"},
+    "USER_A": {"uid": "demo-user-a", "phone": "+12025550100", "name": "Alex"},
+    "USER_B": {"uid": "demo-user-b", "phone": "+12025550101", "name": "Jordan"},
 }
 
 

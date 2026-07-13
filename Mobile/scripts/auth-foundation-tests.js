@@ -29,7 +29,7 @@ function compileTs(relativePath, mocks = {}) {
 }
 
 const { exports: phoneUtils } = compileTs('src/utils/normalizePhone.ts');
-assert.equal(phoneUtils.normalizePhone(' +1 (555) 555-0100 '), '+15555550100');
+assert.equal(phoneUtils.normalizePhone(' +1 (202) 555-0100 '), '+12025550100');
 assert.equal(phoneUtils.normalizePhone('98220 30378'), '9822030378');
 assert.equal(phoneUtils.normalizePhone(''), '');
 assert.equal(phoneUtils.phoneLast4('+1 (555) 555-0101'), '0101');
@@ -49,8 +49,16 @@ assert.match(authServiceSource, /setAccessTokenResolver/);
 const firebaseProviderSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'services', 'auth', 'firebaseAuthProvider.ts'), 'utf8');
 assert.match(firebaseProviderSource, /signInWithPhoneNumber/);
 assert.match(firebaseProviderSource, /getIdToken/);
+assert.doesNotMatch(firebaseProviderSource, /\.getIdToken\(/);
 assert.match(firebaseProviderSource, /connectAuthEmulator/);
-assert.doesNotMatch(firebaseProviderSource, /123456|5555550100|5555550101/);
+assert.doesNotMatch(firebaseProviderSource, /123456|2025550100|2025550101/);
+
+const appConfigSource = fs.readFileSync(path.join(__dirname, '..', 'app.config.js'), 'utf8');
+assert.match(appConfigSource, /@react-native-firebase\/app/);
+assert.match(appConfigSource, /@react-native-firebase\/auth/);
+assert.match(appConfigSource, /keychain-access-groups/);
+assert.match(appConfigSource, /\$\(AppIdentifierPrefix\)/);
+assert.match(appConfigSource, /com\.teamknook\.knook\.dev/);
 
 const phoneScreen = fs.readFileSync(path.join(__dirname, '..', 'app', '(auth)', 'phone.tsx'), 'utf8');
 const otpScreen = fs.readFileSync(path.join(__dirname, '..', 'app', '(auth)', 'otp.tsx'), 'utf8');

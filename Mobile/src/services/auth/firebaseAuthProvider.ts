@@ -1,6 +1,7 @@
 import {
   connectAuthEmulator,
   getAuth,
+  getIdToken,
   onAuthStateChanged,
   signInWithPhoneNumber,
   signOut as firebaseSignOut,
@@ -56,6 +57,9 @@ export const firebaseAuthProvider: AuthProvider = {
       sessions.set(id, confirmation);
       return { id, phoneNumber, provider: 'firebase' };
     } catch (error) {
+      diagnostics.error('firebase-send-code-failed', error, {
+        phoneSuffix: phoneNumber.slice(-4),
+      });
       throw mapError(error);
     }
   },
@@ -67,19 +71,29 @@ export const firebaseAuthProvider: AuthProvider = {
     try {
       const confirmation = sessions.get(session.id);
       if (!confirmation) throw new Error('Verification code expired');
+      diagnostics.log('firebase-confirm-code-start', {
+        phoneSuffix: session.phoneNumber.slice(-4),
+      });
       const credential = await confirmation.confirm(code);
+      diagnostics.log('firebase-confirm-code-success', {
+        uid: credential.user.uid,
+        phoneSuffix: session.phoneNumber.slice(-4),
+      });
       sessions.delete(session.id);
       const user = credential.user;
       await setSession(null, user.uid);
       return { uid: user.uid, onboardingCompleted: false };
     } catch (error) {
+      diagnostics.error('firebase-confirm-code-failed', error, {
+        phoneSuffix: session.phoneNumber.slice(-4),
+      });
       throw mapError(error);
     }
   },
 
   async getAccessToken(forceRefresh = false): Promise<string | null> {
     const user = getAuth().currentUser;
-    return user ? user.getIdToken(forceRefresh) : null;
+    return user ? getIdToken(user, forceRefresh) : null;
   },
 
   async getCurrentUid(): Promise<string | null> {

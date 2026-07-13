@@ -31,7 +31,10 @@ class FakeUsers:
     async def find_one(self, query, _projection=None):
         for doc in self.docs:
             if all(doc.get(key) == value for key, value in query.items()):
-                return dict(doc)
+                result = dict(doc)
+                if _projection and _projection.get("_id") == 0:
+                    result.pop("_id", None)
+                return result
         return None
 
     async def update_one(self, query, update):
@@ -41,6 +44,7 @@ class FakeUsers:
                 return
 
     async def insert_one(self, doc):
+        doc["_id"] = object()
         self.docs.append(dict(doc))
 
 
@@ -51,7 +55,7 @@ class FakeDb:
 
 def test_firebase_mapping_attaches_to_existing_phone_hash(monkeypatch):
     server = load_server(monkeypatch)
-    phone = "+15555550100"
+    phone = "+12025550100"
     existing = {
         "uid": "demo-user-a",
         "phoneHash": server.sha256(server.normalize_phone(phone)),
@@ -86,6 +90,7 @@ def test_firebase_mapping_bootstraps_new_preview_user(monkeypatch):
     assert resolved["phoneLast4"] == "9999"
     assert resolved["onboardingCompleted"] is False
     assert "phone" not in resolved
+    assert "_id" not in resolved
     assert len(users.docs) == 1
 
 
@@ -115,7 +120,7 @@ def test_firebase_mode_uses_verified_claims(monkeypatch):
     monkeypatch.setattr(server, "db", FakeDb(users))
     monkeypatch.setattr(server, "verify_firebase_token", lambda token: {
         "uid": "firebase-jordan",
-        "phone_number": "+15555550101",
+        "phone_number": "+12025550101",
     })
 
     resolved = asyncio.run(server.current_user("Bearer verified-token"))

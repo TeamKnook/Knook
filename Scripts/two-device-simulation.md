@@ -6,8 +6,8 @@ This workflow runs two isolated iOS Simulator devices against one local preview 
 
 | Alias | Phone | OTP | Name |
 | --- | --- | --- | --- |
-| USER_A | +15555550100 | 123456 | Alex |
-| USER_B | +15555550101 | 123456 | Jordan |
+| USER_A | +12025550100 | 123456 | Alex |
+| USER_B | +12025550101 | 123456 | Jordan |
 
 These identities are local preview fixtures only. They must not be hardcoded into production app behavior.
 
@@ -114,7 +114,7 @@ Manual fallback:
 Simulator A:
 
 ```text
-phone: +15555550100
+phone: +12025550100
 otp: 123456
 profile name: Alex
 ```
@@ -122,7 +122,7 @@ profile name: Alex
 Simulator B:
 
 ```text
-phone: +15555550101
+phone: +12025550101
 otp: 123456
 profile name: Jordan
 ```

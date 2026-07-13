@@ -1,34 +1,35 @@
 # Firebase Auth Current State
 
-This document records the current authentication implementation before migrating Knook Dev from preview JWT authentication to Firebase Phone Authentication.
+This document records the authentication implementation after adding the Firebase Phone Authentication foundation. Product data still lives in the temporary FastAPI/MongoDB preview backend.
 
-## Current Flow
+## Mobile Flow
 
 1. `Mobile/app/(auth)/phone.tsx`
    - Starts with an empty phone input.
    - Normalizes the typed value with `Mobile/src/utils/normalizePhone.ts`.
    - Calls `authService.requestOtp(phone)`.
-   - Navigates to `/(auth)/otp` with `phone`, `verificationId`, and preview-only `devCode`.
+   - In Firebase mode, starts Firebase Phone Auth and navigates with a Firebase verification session id.
+   - In preview mode, calls the temporary preview OTP endpoint and may include preview-only `devCode`.
 
 2. `Mobile/app/(auth)/otp.tsx`
    - Accepts a six-digit code.
    - Calls `authService.verifyOtp(phone, verificationId, code)`.
-   - Stores the returned preview JWT and uid through `setSession`.
+   - In Firebase mode, confirms the Firebase verification code and relies on Firebase Auth state.
+   - In preview mode, stores the returned preview JWT and uid through `setSession`.
    - Routes completed users to `/(tabs)/crushes`.
    - Routes incomplete users to `/(onboarding)/profile`.
    - Shows the preview `devCode` only when `appEnvironment.canUsePreviewTools` is true.
 
 3. `Mobile/src/services/auth/authService.ts`
-   - Wraps preview API routes:
-     - `POST /api/auth/request-otp`
-     - `POST /api/auth/verify-otp`
-   - Persists `token` and `uid` in AsyncStorage via `Mobile/src/services/api.ts`.
-   - Clears session with `clearSession`.
+   - Selects `FirebaseAuthProvider` or `PreviewAuthProvider` through explicit environment configuration.
+   - Registers token and uid resolvers for `Mobile/src/services/api.ts`.
+   - Clears the active auth provider session on sign-out.
 
 4. `Mobile/src/services/api.ts`
-   - Stores preview token at `knook.token`.
-   - Stores local uid at `knook.uid`.
-   - Sends `Authorization: Bearer <preview JWT>` for all API calls when a token exists.
+   - In Firebase mode, asks Firebase Auth for a fresh ID token before API calls.
+   - In preview mode, reads the stored preview JWT.
+   - Sends `Authorization: Bearer <token>` for authenticated API calls.
+   - Handles non-JSON backend error responses without crashing the UI.
 
 5. `Mobile/src/hooks/useAuth.ts`
    - Reads `knook.uid` from AsyncStorage.
@@ -44,9 +45,12 @@ This document records the current authentication implementation before migrating
    - Calls `useAuth().signOut()`.
    - Replaces navigation with the phone screen.
 
-## Current Backend Flow
+## Backend Flow
 
 1. `Backend/preview-api/server.py`
+   - Uses explicit `AUTH_MODE=preview` or `AUTH_MODE=firebase`.
+
+2. In preview mode:
    - `POST /api/auth/request-otp` accepts demo OTP only when `DEMO_MODE=true`.
    - `POST /api/auth/verify-otp` checks the stored preview verification.
    - Existing users are located by `phoneHash`.
@@ -54,12 +58,20 @@ This document records the current authentication implementation before migrating
    - Session tokens are signed preview JWTs using `JWT_SECRET`.
    - `current_user` decodes the preview JWT and loads `users.uid`.
 
-2. Preview JWT claims
+3. In Firebase mode:
+   - Mobile sends a Firebase ID token as `Authorization: Bearer <Firebase ID token>`.
+   - FastAPI verifies the token with Firebase Admin SDK.
+   - The verified Firebase `uid` and `phone_number` claim are used to resolve a local preview user.
+   - Existing users are matched first by `firebase_uid`, then by verified phone hash.
+   - New Firebase-authenticated users receive a minimal local preview user record.
+   - Old preview JWTs are not accepted in Firebase mode.
+
+4. Preview JWT claims
    - `sub`: local MongoDB user uid.
    - `typ`: `knook-preview-session`.
    - `iat` and `exp`: local preview session timing.
 
-3. Product routes
+5. Product routes
    - `current_user` is the dependency for users, crushes, matches, messages, reveal, and unhook.
    - Every product route currently assumes a local preview user document.
 
@@ -80,10 +92,17 @@ This document records the current authentication implementation before migrating
 
 Development users are seeded by `Scripts/two_user_reset_seed.py`:
 
-- Alex: local uid `demo-user-a`, phone `+15555550100`.
-- Jordan: local uid `demo-user-b`, phone `+15555550101`.
+- Alex: local uid `demo-user-a`, phone `+12025550100`.
+- Jordan: local uid `demo-user-b`, phone `+12025550101`.
 
 The seed script stores phone hashes, not raw phone numbers.
+
+The matching Firebase Console test numbers are:
+
+- Alex: `+12025550100`.
+- Jordan: `+12025550101`.
+
+Both use a Firebase Console test code for local development. Do not hardcode that code in production-facing source.
 
 ## Files Affected By Firebase Auth
 
@@ -109,3 +128,5 @@ The seed script stores phone hashes, not raw phone numbers.
 - Existing preview users must be matched carefully by verified Firebase `phone_number` claim.
 - The backend must not accept both preview JWTs and Firebase ID tokens in the same `AUTH_MODE`.
 - Local cached uid cannot be treated as proof of authentication after Firebase migration.
+- Native Firebase Phone Auth requires the custom Knook Dev build; Expo Go cannot run this path.
+- iOS simulator keychain failures should first be debugged through generated entitlements and fresh simulator state before adding more native workarounds.

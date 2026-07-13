@@ -36,8 +36,8 @@ JWT_TTL_HOURS = 12
 AUTH_MODE = os.environ.get("AUTH_MODE", "preview").lower()
 FIREBASE_PROJECT_ID = os.environ.get("FIREBASE_PROJECT_ID")
 TWO_USER_DEMO_PHONES = {
-    "USER_A": "+15555550100",
-    "USER_B": "+15555550101",
+    "USER_A": "+12025550100",
+    "USER_B": "+12025550101",
 }
 
 app = FastAPI(title="Knook MVP backend")
@@ -195,12 +195,13 @@ async def resolve_firebase_user(claims: dict) -> dict:
         "updatedAt": now(),
     }
     await db.users.insert_one(user_doc)
+    user = await db.users.find_one({"uid": firebase_uid}, {"_id": 0})
     log_demo_event(
-        f"[{demo_alias_for_user(user_doc)}]",
+        f"[{demo_alias_for_user(user)}]",
         "firebase auth created preview user",
         uid=firebase_uid,
     )
-    return user_doc
+    return user
 
 
 async def current_user(authorization: Optional[str] = Header(default=None)) -> dict:
@@ -413,7 +414,15 @@ async def _detect_mutual(uid: str, target_phone_hash: str, my_phone_hash: str):
             userB=demo_alias_for_phone_hash(target_phone_hash),
         )
     except DuplicateKeyError:
-        log_demo_event("[MATCH]", "deduplicated reciprocal crush", matchId=match_id)
+        existing_match = await db.matches.find_one({"matchId": match_id}, {"_id": 0})
+        if existing_match and existing_match.get("status") == "unhooked":
+            await db.matches.update_one(
+                {"matchId": match_id},
+                {"$set": {k: v for k, v in match_doc.items() if k != "_id"}},
+            )
+            log_demo_event("[MATCH]", "reactivated unhooked match for new crush", matchId=match_id)
+        else:
+            log_demo_event("[MATCH]", "deduplicated reciprocal crush", matchId=match_id)
     # Stamp matchId + status on both crush docs
     await db.crushes.update_one(
         {"uid": uid, "phoneHash": target_phone_hash},

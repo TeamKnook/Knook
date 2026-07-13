@@ -5,7 +5,12 @@ This setup must be completed by a human in the Firebase Console. Do not invent p
 ## 1. Create Development Project
 
 1. Open the Firebase Console.
-2. Create a project named something like `knook-development`.
+2. Create a development project. The current development project is:
+
+```text
+knook-e2c74
+```
+
 3. Disable or defer Analytics unless the team explicitly wants it for development.
 4. Record the Firebase project ID in local setup notes, not in source code unless using an example placeholder.
 
@@ -42,7 +47,7 @@ Do not commit the real file.
 1. Open Build > Authentication.
 2. Click Get Started if needed.
 3. Enable the Phone provider.
-4. Configure allowed SMS regions for development.
+4. Configure allowed SMS regions for development. The current simulator test numbers require United States (`US`).
 5. Avoid real SMS sends for routine simulator development.
 
 ## 5. Add Fictional Test Numbers
@@ -51,10 +56,12 @@ Add Firebase Console fictional phone numbers for simulator testing:
 
 | User | Phone |
 | --- | --- |
-| Alex | `+15555550100` |
-| Jordan | `+15555550101` |
+| Alex | `+12025550100` |
+| Jordan | `+12025550101` |
 
 Configure six-digit test codes in the Firebase Console. Do not commit those codes to the repository.
+
+The local simulator workflow currently uses Firebase Console fictional numbers, not real SMS.
 
 ## 6. iOS URL Scheme Requirements
 
@@ -77,4 +84,10 @@ When Android development build testing begins:
 
 ## Current Blocker Status
 
-Until the Firebase project and local config files are supplied, native Firebase Phone Auth can be scaffolded but a Firebase-backed native build cannot be fully verified.
+Development Firebase Phone Auth has been verified with the current iOS Knook Dev build and the two test numbers above.
+
+Remaining setup work:
+
+- Add Android SHA-1 and SHA-256 fingerprints before Android Firebase Phone Auth testing.
+- Complete real-device Apple/APNs verification before physical iPhone testing.
+- Keep Firebase client config files and service-account credentials out of git.

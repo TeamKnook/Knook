@@ -19,7 +19,7 @@ Knook/
 
 ## Current Status
 
-This branch integrates the Emergent-generated MVP as a reviewable base while preserving the existing Knook documentation, design system, GitHub templates, and editor configuration.
+Knook runs locally as the custom native `Knook Dev` iOS development build. The current integration baseline includes the stabilized Emergent-generated MVP, pre-reveal privacy fixes, native development build workflow, edge-case validation, and Firebase Phone Auth foundation work.
 
 ## Production Stack Direction
 
@@ -47,7 +47,7 @@ Preview-only protections:
 
 ## Firebase Auth Foundation
 
-Knook now has scaffolding for Firebase Phone Authentication in the custom `Knook Dev` build.
+Knook now supports Firebase Phone Authentication in the custom `Knook Dev` build while product data remains on the temporary FastAPI/MongoDB preview backend.
 
 The mobile app supports explicit auth-provider selection:
 
@@ -71,6 +71,8 @@ Firebase mode requires human-supplied Firebase Console configuration files and l
 - [Firebase Admin Local Setup](Docs/Firebase/FIREBASE_ADMIN_LOCAL_SETUP.md)
 - [Firebase Phone Auth Migration](Docs/Firebase/FIREBASE_PHONE_AUTH_MIGRATION.md)
 - [Phone Auth Privacy Requirements](Docs/Firebase/PHONE_AUTH_PRIVACY_REQUIREMENTS.md)
+
+The development Firebase project currently validated locally is `knook-e2c74`, with fictional Firebase Console test numbers for Alex and Jordan. Real user SMS, physical-device behavior, and Android Firebase Phone Auth remain separate follow-up validation items.
 
 ## Local Setup
 

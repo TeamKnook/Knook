@@ -8,8 +8,8 @@ Manual scenarios must remain marked `Not run` until confirmed by the human teste
 
 ## Environment
 
-- Simulator A: iPhone 17 Pro, User A Alex, `+15555550100`
-- Simulator B: iPhone 17 Pro Max, User B Jordan, `+15555550101`
+- Simulator A: iPhone 17 Pro, User A Alex, `+12025550100`
+- Simulator B: iPhone 17 Pro Max, User B Jordan, `+12025550101`
 - Mobile runtime: Knook Dev, bundle `com.teamknook.knook.dev`
 - Metro: `APP_VARIANT=development npx expo start --dev-client --clear`
 - Preview API: `uvicorn server:app --reload --host 0.0.0.0 --port 8000`

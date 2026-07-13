@@ -86,9 +86,11 @@ AUTH_MODE=firebase
 Firebase mode also requires:
 
 ```env
-FIREBASE_PROJECT_ID=knook-development
-GOOGLE_APPLICATION_CREDENTIALS=/absolute/local/path/to/firebase-admin.json
+FIREBASE_PROJECT_ID=knook-e2c74
+GOOGLE_APPLICATION_CREDENTIALS=/Users/Amoux/.config/knook/firebase/knook-development-admin.json
 ```
+
+Keep the service-account JSON outside the repository.
 
 ## Expo Development Build
 
@@ -110,6 +112,11 @@ APP_VARIANT=development AUTH_PROVIDER=firebase npx expo prebuild --clean
 APP_VARIANT=development AUTH_PROVIDER=firebase npx expo run:ios
 APP_VARIANT=development AUTH_PROVIDER=firebase npx expo start --dev-client --clear
 ```
+
+Firebase Phone Auth was validated locally with the Knook Dev iOS simulator build and Firebase Console fictional numbers:
+
+- Alex: `+12025550100`
+- Jordan: `+12025550101`
 
 Start Metro for the development client:
 

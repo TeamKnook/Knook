@@ -58,7 +58,7 @@ assert.equal(contacts[2].name, 'Unknown');
 
 sandbox.exports.contactsService.loadContacts().then((loaded) => {
   assert.ok(loaded.length >= 3);
-  assert.ok(loaded.some((contact) => contact.phone === '+15555550101'));
+  assert.ok(loaded.some((contact) => contact.phone === '+12025550101'));
   console.log('runtime stability checks passed');
 }).catch((error) => {
   console.error(error);
