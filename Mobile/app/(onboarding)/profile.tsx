@@ -110,6 +110,7 @@ export default function ProfileSetup() {
           style={styles.flex}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          alwaysBounceVertical
           contentContainerStyle={styles.scroll}
         >
           <SectionHeader
@@ -155,11 +156,9 @@ export default function ProfileSetup() {
           />
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
-        </ScrollView>
 
-        <View style={styles.footer}>
           <PrimaryButton testID="profile-save-button" label="Enter Knook" onPress={onSave} loading={submitting} />
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </ScreenContainer>
   );
@@ -167,7 +166,7 @@ export default function ProfileSetup() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  scroll: { flexGrow: 1, paddingTop: spacing.lg, paddingBottom: spacing.xl, gap: spacing.lg },
+  scroll: { flexGrow: 1, paddingTop: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.lg },
   row: { flexDirection: 'row', gap: spacing.md },
   flex1: { flex: 1 },
   flex2: { flex: 2 },
@@ -186,6 +185,5 @@ const styles = StyleSheet.create({
   chipLabel: { ...typography.body, color: colors.knookDark },
   chipLabelSelected: { color: colors.white, fontWeight: '700' },
   textarea: { minHeight: 96, textAlignVertical: 'top' },
-  footer: { paddingTop: spacing.md, paddingBottom: spacing.lg },
   error: { ...typography.caption, color: '#B91C1C' },
 });

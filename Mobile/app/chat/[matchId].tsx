@@ -3,7 +3,6 @@ import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, 
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useMessages } from '@/src/hooks/useMessages';
 import { firestoreService } from '@/src/services/firestore/firestoreService';
 import type { Message } from '@/src/models';
@@ -17,14 +16,9 @@ export default function ChatScreen() {
   const { match, messages, send, error: loadError } = useMessages(matchId);
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [myUid, setMyUid] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [confirmUnhook, setConfirmUnhook] = useState(false);
   const listRef = useRef<FlatList<Message>>(null);
-
-  useEffect(() => {
-    AsyncStorage.getItem('knook.uid').then(setMyUid);
-  }, []);
 
   useEffect(() => {
     if (messages.length) {
@@ -118,7 +112,7 @@ export default function ChatScreen() {
           keyExtractor={(m) => m.messageId}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => {
-            const mine = item.senderId === myUid;
+            const mine = match?.otherUid ? item.senderId !== match.otherUid : false;
             return (
               <View style={[styles.bubbleRow, mine ? styles.right : styles.left]}>
                 <View
