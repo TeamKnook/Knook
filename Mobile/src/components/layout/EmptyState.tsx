@@ -5,18 +5,21 @@ import { colors, spacing, typography } from '@/src/theme';
 
 interface Props {
   icon?: React.ComponentProps<typeof Ionicons>['name'];
+  illustration?: React.ReactNode;
   title: string;
   description?: string;
   testID?: string;
   children?: React.ReactNode;
 }
 
-export function EmptyState({ icon = 'heart-outline', title, description, testID, children }: Props) {
+export function EmptyState({ icon = 'heart-outline', illustration, title, description, testID, children }: Props) {
   return (
     <View style={styles.wrap} testID={testID}>
-      <View style={styles.iconCircle}>
-        <Ionicons name={icon} size={28} color={colors.knookPurple} />
-      </View>
+      {illustration ?? (
+        <View style={styles.iconCircle}>
+          <Ionicons name={icon} size={28} color={colors.knookPurple} />
+        </View>
+      )}
       <Text style={styles.title}>{title}</Text>
       {description ? <Text style={styles.description}>{description}</Text> : null}
       {children ? <View style={styles.actions}>{children}</View> : null}

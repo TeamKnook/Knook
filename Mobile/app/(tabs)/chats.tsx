@@ -1,7 +1,7 @@
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { ScreenContainer, SectionHeader, EmptyState, GhostButton } from '@/src/components';
+import { ScreenContainer, SectionHeader, EmptyState, GhostButton, KnookIllustration } from '@/src/components';
 import { useMatches } from '@/src/hooks/useMatches';
 import { firestoreService } from '@/src/services/firestore/firestoreService';
 import { colors, radius, spacing, typography } from '@/src/theme';
@@ -38,6 +38,12 @@ export default function ChatsScreen() {
         keyExtractor={(m) => m.matchId}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor={colors.knookPurple} />}
+        ListHeaderComponent={
+          matches.length ? (
+            <KnookIllustration state="hearts" size="medium" loop={false} testID="daily-reveal-illustration" />
+          ) : null
+        }
+        ListHeaderComponentStyle={matches.length ? styles.revealIllustration : undefined}
         ListEmptyComponent={
           !loading ? (
             <EmptyState
@@ -94,6 +100,7 @@ const styles = StyleSheet.create({
   headerWrap: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
   listWrap: { flex: 1 },
   list: { flexGrow: 1, paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, gap: spacing.sm },
+  revealIllustration: { marginBottom: spacing.md },
   error: { ...typography.caption, color: '#B91C1C', marginTop: spacing.sm },
   row: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
