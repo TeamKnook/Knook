@@ -4,14 +4,37 @@
  *   users/{uid}/crushes/{phoneHash}
  *
  * If the target user (whose users.phoneHash == the crushed phoneHash) has
- * already crushed the current user back, we create a match document with
- * status = 'pending_reveal'. Matches are NOT surfaced to users until the
- * dailyReveal job flips them to 'active' at 6:30 PM IST.
+ * already crushed the current user back, we create a hidden match document.
+ * The match remains on privacy_hold until both users have at least three
+ * active crushes, then waits in pending_reveal for the next daily reveal.
  */
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
+import { participantActiveCrushCounts } from '../matching/firestorePrivacy';
+import {
+  isActiveCrushStatus,
+  reciprocalMatchStatus,
+} from '../matching/privateCircle';
 
 const db = admin.firestore;
+
+async function refreshPrivacyHeldMatches(uid: string): Promise<void> {
+  const held = await db().collection('matches')
+    .where('participants', 'array-contains', uid)
+    .where('status', '==', 'privacy_hold')
+    .get();
+  if (held.empty) return;
+
+  const now = admin.firestore.Timestamp.now();
+  for (const match of held.docs) {
+    const participants = match.data().participants;
+    if (!Array.isArray(participants) || participants.length !== 2) continue;
+    const counts = await participantActiveCrushCounts(participants.map(String), now);
+    if (reciprocalMatchStatus(...counts) === 'pending_reveal') {
+      await match.ref.update({ status: 'pending_reveal', updatedAt: now });
+    }
+  }
+}
 
 export const detectMutualCrush = functions.firestore
   .document('users/{uid}/crushes/{phoneHash}')
@@ -20,7 +43,10 @@ export const detectMutualCrush = functions.firestore
     if (!change.after.exists) return;
 
     const crush = change.after.data();
-    if (!crush || crush.status !== 'pending') return;
+    if (!crush || !isActiveCrushStatus(crush.status)) return;
+
+    await refreshPrivacyHeldMatches(uid);
+    if (crush.status !== 'pending') return;
 
     const meSnap = await db().doc(`users/${uid}`).get();
     const me = meSnap.data();
@@ -43,7 +69,9 @@ export const detectMutualCrush = functions.firestore
     const participants = [uid, targetUid].sort();
     const matchId = participants.join('_');
     const matchRef = db().collection('matches').doc(matchId);
-    const now = admin.firestore.FieldValue.serverTimestamp();
+    const now = admin.firestore.Timestamp.now();
+    const activeCounts = await participantActiveCrushCounts(participants, now);
+    const status = reciprocalMatchStatus(...activeCounts);
 
     await db().runTransaction(async (transaction) => {
       const matchSnap = await transaction.get(matchRef);
@@ -55,7 +83,7 @@ export const detectMutualCrush = functions.firestore
           userA: participants[0],
           userB: participants[1],
           participants,
-          status: 'pending_reveal',
+          status,
           matchedAt: now,
           revealedAt: null,
           revealedBy: [],
@@ -74,6 +102,6 @@ export const detectMutualCrush = functions.firestore
       transaction.update(reverseRef, { status: 'matched', matchId, updatedAt: now });
     });
 
-    // TODO(notifications): explicitly do NOT push a notification here —
-    // matches must remain hidden until the dailyReveal job runs.
+    // No notification is sent here. Both hidden states remain unreadable to
+    // clients until a daily reveal activates the match.
   });
