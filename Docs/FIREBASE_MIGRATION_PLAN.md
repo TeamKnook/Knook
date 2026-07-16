@@ -33,29 +33,29 @@ Move Knook from the temporary local preview implementation to the intended Fireb
 - Validation criteria: users can create, read, and update only their own profile; incomplete onboarding routes to onboarding; completed profiles route to main app; preview product flow still works.
 - Rollback strategy: keep the preview profile bridge while profile routing is validated.
 
-## 4. Crush Storage In Firestore
+## 4. Crush Storage And Private Circle Eligibility In Firestore
 
-- Current migration: `PRODUCT_DATA_PROVIDER=firebase` writes outgoing crushes to `users/{uid}/crushes/{phoneHash}`.
+- Current migration: `PRODUCT_DATA_PROVIDER=firebase` submits `crushRequests`; a trusted function writes `users/{uid}/crushes/{phoneHash}`.
 - Temporary compatibility: preview API remains available behind `PRODUCT_DATA_PROVIDER=preview`.
-- Affected files: `Mobile/src/services/firestore/firestoreService.ts`, `Mobile/src/services/firestore/firebaseProductDataService.ts`, `Backend/functions/src/crushes/detectMutualCrush.ts`, Firestore rules.
-- Risks: storing raw phone numbers, duplicate crushes, weak permissions.
-- Validation criteria: raw phone/name is not stored; duplicate crush add is idempotent; 30-day expiry fields exist.
+- Affected files: `Mobile/src/services/firestore/firestoreService.ts`, `Mobile/src/services/firestore/firebaseProductDataService.ts`, `Backend/functions/src/crushes/handleCrushRequest.ts`, `Backend/functions/src/crushes/detectMutualCrush.ts`, Firestore rules.
+- Risks: storing raw phone numbers, duplicate crushes, client-side limit bypass, exposing held matches.
+- Validation criteria: raw phone/name is not stored; duplicate crush add is idempotent; 30-day expiry fields exist; a sixth free active crush is rejected; one or two active crushes cannot reveal a match.
 - Rollback strategy: set `PRODUCT_DATA_PROVIDER=preview`.
 
 ## 5. Deterministic Mutual Match Creation
 
-- Current migration: Cloud Function creates `matches/{sortedUidA_sortedUidB}` in a transaction from reciprocal pending crushes.
+- Current migration: Cloud Function creates `matches/{sortedUidA_sortedUidB}` in a transaction from reciprocal pending crushes. It uses `privacy_hold` until both participants have at least three active crushes.
 - Affected files: `Backend/functions/src/crushes/detectMutualCrush.ts`, Firestore indexes/rules.
 - Risks: duplicate matches during simultaneous reciprocal writes.
-- Validation criteria: repeated or simultaneous mutual crush writes create at most one match, and duplicate crush submissions do not create duplicate visible cards or match records.
+- Validation criteria: repeated or simultaneous mutual crush writes create at most one match; duplicate submissions create no duplicates; held and pending matches remain unreadable.
 - Rollback strategy: disable function trigger in non-production while preserving crush docs.
 
 ## 6. Daily Reveal Cloud Function
 
-- Current migration: scheduled Cloud Function activates pending matches at 6:30 PM IST. Development reveal creates `devRevealRequests` processed by a function.
+- Current migration: scheduled Cloud Function re-checks both participants' active-crush counts at 6:30 PM IST. Only matches where both counts are at least three activate. Development reveal uses the same eligibility path.
 - Affected files: `Backend/functions/src/reveal/dailyReveal.ts`, scheduled function config.
 - Risks: wrong timezone, revealing early, expiry based on `matchedAt` instead of `revealedAt`, repeated reveal execution extending expiry.
-- Validation criteria: `pending_reveal` changes to `active` only at the scheduled reveal; `matchExpiresAt` equals `revealedAt + 48h`; repeated execution leaves `revealedAt` and `matchExpiresAt` unchanged.
+- Validation criteria: ineligible matches remain `privacy_hold`; eligible hidden matches become `active` only at reveal; `matchExpiresAt` equals `revealedAt + 48h`; active matches are never re-hidden by later crush-count changes.
 - Rollback strategy: pause scheduled function and set `PRODUCT_DATA_PROVIDER=preview`.
 
 ## 7. Realtime Match Listeners

@@ -78,7 +78,7 @@ type MatchStatus =
 6. Once a match is active, later crush-count changes do not hide it again.
 7. Privacy eligibility overrides the older rule that every already-created match must reveal.
 
-This state machine requires authoritative Cloud Functions work and is not implemented by documentation-only branches.
+This state machine requires authoritative Cloud Functions work. Documentation-only or demo branches must not claim it; the Blaze-ready product-data branch implements it and requires deployment verification before it is operational.
 
 ## 4. Home and Crush List
 

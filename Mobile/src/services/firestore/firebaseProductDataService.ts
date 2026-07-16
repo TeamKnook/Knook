@@ -135,6 +135,21 @@ async function waitForMatch(matchId: string, predicate: (match: Match) => boolea
   return last;
 }
 
+async function waitForCrushRequest(
+  requestRef: ReturnType<typeof doc>,
+): Promise<FirestoreRecord> {
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    const snapshot = await getDoc(requestRef);
+    const data = snapshot.data() as FirestoreRecord | undefined;
+    if (data?.status === 'failed') {
+      throw new Error(typeof data.error === 'string' ? data.error : 'Could not add crush');
+    }
+    if (data?.status === 'processed') return data;
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  throw new Error('Adding this crush is taking longer than expected. Please try again.');
+}
+
 export const firebaseProductDataService = {
   async addCrush(phone: string): Promise<Crush> {
     const profile = await currentProfile();
@@ -142,35 +157,19 @@ export const firebaseProductDataService = {
     const phoneHash = sha256(targetPhone);
     if (phoneHash === profile.phoneHash) throw new Error('You cannot crush on yourself');
 
-    const now = serverTimestamp();
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     const crushRef = doc(getKnookFirestore(), 'users', profile.uid, 'crushes', phoneHash);
-    const existing = await getDoc(crushRef);
-    if (existing.exists()) {
-      const existingCrush = crushFromData(existing.data() as FirestoreRecord);
-      if (existingCrush.status === 'pending' || existingCrush.status === 'matched') {
-        return existingCrush;
-      }
-    }
-
-    await setDoc(
-      crushRef,
-      {
-        uid: profile.uid,
-        phoneHash,
-        phoneLast4: phoneLast4(targetPhone),
-        status: 'pending',
-        crushedAt: existing.exists() ? existing.data()?.crushedAt ?? now : now,
-        expiresAt,
-        renewedAt: existing.exists() ? now : null,
-        matchId: null,
-        createdAt: existing.exists() ? existing.data()?.createdAt ?? now : now,
-        updatedAt: now,
-      },
-      { merge: true },
-    );
+    const requestRef = doc(collection(getKnookFirestore(), 'crushRequests'));
+    await setDoc(requestRef, {
+      requestId: requestRef.id,
+      uid: profile.uid,
+      phoneHash,
+      phoneLast4: phoneLast4(targetPhone),
+      createdAt: serverTimestamp(),
+    });
+    await waitForCrushRequest(requestRef);
 
     const saved = await getDoc(crushRef);
+    if (!saved.exists()) throw new Error('Crush was not saved. Please try again.');
     return crushFromData(saved.data() as FirestoreRecord);
   },
 

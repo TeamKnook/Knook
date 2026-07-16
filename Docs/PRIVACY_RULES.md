@@ -8,7 +8,7 @@ These rules summarize `Docs/PRODUCT_RULES_V1_1.md`, which is authoritative when 
 - A reciprocal match below that threshold is `privacy_hold`, not user-visible.
 - Eligibility is checked again at the 6:30 PM IST reveal.
 - Home may show neutral progress toward three crushes but must not imply a held match exists.
-- The full `privacy_hold` transition requires authoritative Cloud Functions work; client-only checks are insufficient.
+- The full `privacy_hold` transition is implemented through authoritative Cloud Functions on the Blaze-ready branch; client-only checks remain forbidden.
 
 Knook's product promise depends on hiding reciprocity, identity, and unhook intent until the exact moment the user has consented to reveal or the daily reveal has activated a match.
 

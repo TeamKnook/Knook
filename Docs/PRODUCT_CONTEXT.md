@@ -51,4 +51,4 @@ Knook should feel emotionally risky but technically private. The app may use pho
 
 ## Current Migration Caveat
 
-Firebase Auth, private user profiles, and current product-data foundations are present in development. `Backend/preview-api` and MongoDB remain temporary compatibility and local-test infrastructure. The V1.1 three-crush `privacy_hold` state machine, production contacts, notifications, access gate, and deferred monetization require dedicated later milestones.
+Firebase Auth, private user profiles, and current product-data foundations are present in development. The Blaze-ready branch also contains the V1.1 three-crush `privacy_hold` state machine, pending Functions deployment and two-device verification. `Backend/preview-api` and MongoDB remain temporary compatibility and local-test infrastructure. Production contacts, notifications, the access gate, and deferred monetization require later milestones.

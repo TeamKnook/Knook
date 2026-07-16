@@ -61,6 +61,8 @@ Stores one user's private outgoing expression of interest.
 - Users cannot read incoming crushes.
 - Raw phone numbers are not stored in crush documents.
 - Match creation is handled by Cloud Functions.
+- Clients submit `crushRequests`; they cannot write this subcollection directly.
+- The trusted request handler enforces a maximum of five active crushes for free accounts.
 
 ## Collection: `matches`
 
@@ -76,7 +78,7 @@ Represents a mutual connection between two users. Created by Cloud Functions onl
 | `participants` | string[] | Yes | Two participant user IDs |
 | `userA` | string | Yes | Sorted participant A |
 | `userB` | string | Yes | Sorted participant B |
-| `status` | string | Yes | `pending_reveal`, `active`, `unhooked`, `expired` |
+| `status` | string | Yes | `privacy_hold`, `pending_reveal`, `active`, `unhooked`, `expired` |
 | `matchedAt` | timestamp | Yes | Created when reciprocal crush exists |
 | `revealedAt` | timestamp | No | Set when daily reveal activates |
 | `matchExpiresAt` | timestamp | No | Reveal expiry |
@@ -92,7 +94,7 @@ Represents a mutual connection between two users. Created by Cloud Functions onl
 ### Security
 
 - Only active-match participants can read a match.
-- Pending reveal matches are hidden from clients.
+- Privacy-held and pending-reveal matches are hidden from clients.
 - Clients cannot directly create or update match documents.
 - Unhooked states reject chat/message access.
 
@@ -127,9 +129,14 @@ Clients create these documents; Cloud Functions perform the privileged work.
 
 | Collection | Purpose |
 | --- | --- |
+| `crushRequests` | Validate private add-crush requests and enforce active-crush limits |
 | `revealRequests` | Add the current user to a match's reveal state |
 | `unhookRequests` | Unhook a match and clean up related data |
 | `devRevealRequests` | Development-only manual reveal trigger |
+
+## Server-Only Metadata
+
+`privateCircleMetadata/{uid}` is maintained only by Cloud Functions as a transaction contention marker for concurrent add-crush requests. Clients cannot read or write it, and its count is not a user-facing source of truth.
 
 ## Temporary Preview Collections
 

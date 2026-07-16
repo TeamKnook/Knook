@@ -1,4 +1,4 @@
-export type MatchStatus = 'pending_reveal' | 'active' | 'unhooked' | 'expired';
+export type MatchStatus = 'privacy_hold' | 'pending_reveal' | 'active' | 'unhooked' | 'expired';
 
 export interface Match {
   matchId: string;

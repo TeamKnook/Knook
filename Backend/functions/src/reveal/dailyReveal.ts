@@ -1,37 +1,62 @@
 /**
  * dailyReveal
  * Scheduled to run every day at 6:30 PM IST.
- * Flips matches from 'pending_reveal' to 'active' and stamps revealedAt +
- * matchExpiresAt (revealedAt + 48 hours).
+ * Re-checks Private Circle eligibility for hidden reciprocal matches. Eligible
+ * matches become active; ineligible matches remain hidden on privacy_hold.
  */
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
+import { participantActiveCrushCounts } from '../matching/firestorePrivacy';
+import { revealTransition, type MatchStatus } from '../matching/privateCircle';
 
 const db = admin.firestore;
 
 async function activatePendingMatches(): Promise<number> {
-  const pending = await db().collection('matches').where('status', '==', 'pending_reveal').get();
+  const pending = await db().collection('matches')
+    .where('status', 'in', ['privacy_hold', 'pending_reveal'])
+    .get();
   if (pending.empty) return 0;
 
   const now = admin.firestore.Timestamp.now();
   const expiresAt = admin.firestore.Timestamp.fromMillis(now.toMillis() + 48 * 60 * 60 * 1000);
+  let activatedCount = 0;
 
-  // Batch in chunks of 400 to stay under the 500-write limit.
-  const docs = pending.docs;
-  for (let i = 0; i < docs.length; i += 400) {
-    const batch = db().batch();
-    docs.slice(i, i + 400).forEach((d) => {
-      batch.update(d.ref, {
-        status: 'active',
-        revealedAt: d.data().revealedAt ?? now,
-        matchExpiresAt: d.data().matchExpiresAt ?? expiresAt,
+  for (const match of pending.docs) {
+    const data = match.data();
+    const participants = Array.isArray(data.participants) ? data.participants.map(String) : [];
+    const counts = await participantActiveCrushCounts(participants, now);
+    const nextStatus = revealTransition(data.status as MatchStatus, ...counts);
+    const activated = await db().runTransaction(async (transaction) => {
+      const current = await transaction.get(match.ref);
+      if (!current.exists) return false;
+
+      const currentData = current.data()!;
+      if (!['privacy_hold', 'pending_reveal'].includes(String(currentData.status))) {
+        return false;
+      }
+
+      if (nextStatus === 'active') {
+        transaction.update(match.ref, {
+          status: 'active',
+          revealedAt: currentData.revealedAt ?? now,
+          matchExpiresAt: currentData.matchExpiresAt ?? expiresAt,
+          updatedAt: now,
+        });
+        return true;
+      }
+
+      transaction.update(match.ref, {
+        status: 'privacy_hold',
+        revealedAt: null,
+        matchExpiresAt: null,
         updatedAt: now,
       });
+      return false;
     });
-    await batch.commit();
+    if (activated) activatedCount += 1;
   }
 
-  return docs.length;
+  return activatedCount;
 }
 
 export const dailyReveal = functions

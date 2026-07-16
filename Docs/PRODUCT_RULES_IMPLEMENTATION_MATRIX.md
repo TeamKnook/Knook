@@ -16,10 +16,10 @@ This matrix accompanies `Docs/PRODUCT_RULES_V1_1.md`. It records the current bou
 | Unhook and stale access | Enforced | Access is revoked for both users; stale access is rejected. | Chat tests |
 | Development-control gating | Enforced | Demo controls and mock contacts are development-only. | Variant tests |
 | Raw-contact privacy | Guardrail | Mock contacts are current development input. Production contacts and hashing are not implemented. | Contacts milestone |
-| Minimum three active crushes | Not implemented | `privacy_hold` and reveal-time eligibility re-check require authoritative Firebase logic. | Private Circle milestone |
-| Free limit of five | Not implemented | Current UI/backend limits do not yet represent the approved free plan. | Private Circle milestone |
-| `privacy_hold` state | Not implemented | Current match model predates the V1.1 state machine. | Matching milestone |
-| 6:30 PM authoritative schedule | Partially implemented | Development reveal exists; production scheduler and V1.1 re-check remain pending. | Cloud Functions milestone |
+| Minimum three active crushes | Implemented; deployment pending | Cloud Functions count both users' active crushes during reciprocal detection and again at reveal. | Blaze deployment verification |
+| Free limit of five | Implemented; deployment pending | Server-authoritative crush requests enforce five active crushes without trusting the client. | Blaze deployment verification |
+| `privacy_hold` state | Implemented; deployment pending | Reciprocal matches remain hidden on `privacy_hold` until both users meet the threshold. | Blaze deployment verification |
+| 6:30 PM authoritative schedule | Implemented; deployment pending | The scheduled Function runs at 6:30 PM IST and re-checks privacy eligibility transactionally. | Blaze deployment verification |
 | Character-name library | Deferred | `Mystery Match` remains the safe fallback. | Character-name milestone |
 | 48-hour progress UI | Partial | Backend expiry behavior exists; final progress treatment needs product verification. | Chat milestone |
 | Real contact picker and hashing | Deferred | No production contact upload or matching path is shipped. | Contacts milestone |
@@ -33,4 +33,4 @@ This matrix accompanies `Docs/PRODUCT_RULES_V1_1.md`. It records the current bou
 
 ## Scope Rule
 
-Documentation may describe future behavior, but only a dedicated implementation branch may claim it is shipped. In particular, do not expose `privacy_hold` to clients or add a partial three-crush check in UI without the authoritative match and reveal transitions.
+Documentation may describe future behavior, but only deployed code, rules, backend authority, and tests may claim it is operational. This branch includes the authoritative match and reveal transitions; they remain deployment-pending until the Firebase project is on Blaze and the Functions are deployed. `privacy_hold` must never be exposed in user-facing clients.
