@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 260" role="img" aria-labelledby="title">
+  <title id="title">Knook unhook quiet wordmark</title>
+  <rect width="320" height="260" rx="20" fill="#F5F4EF"/>
+  <g fill="#111111" font-family="Outfit, Arial Rounded MT Bold, sans-serif" font-size="78" font-weight="900">
+    <text x="34" y="166">kn</text>
+    <text x="222" y="166">k</text>
+  </g>
+  <g fill="none" stroke="#111111" stroke-linecap="round" stroke-width="13">
+    <path d="M123 142 Q143 159.1 163 142"/>
+    <path d="M174 142 Q194 159.1 214 142"/>
+  </g>
+</svg>

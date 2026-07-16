@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 260" role="img" aria-labelledby="title">
+  <title id="title">Knook anonymous chat cupid wordmark</title>
+  <rect width="320" height="260" rx="20" fill="#F5F4EF"/>
+  <g fill="#111111" font-family="Outfit, Arial Rounded MT Bold, sans-serif" font-size="78" font-weight="900">
+    <text x="34" y="166">kn</text>
+    <text x="222" y="166">k</text>
+  </g>
+  <g fill="#F5F4EF" stroke="#111111" stroke-width="13">
+    <circle cx="143" cy="143" r="23"/>
+    <circle cx="194" cy="143" r="23"/>
+  </g>
+  <g fill="none" stroke="#EAB308" stroke-linecap="round" stroke-width="4">
+    <path d="M124 162 L213 124"/>
+    <path d="M124 162 L115 154"/>
+    <path d="M124 162 L125 150"/>
+  </g>
+  <path d="M213 124 L201 126 L206 136 Z" fill="#EAB308"/>
+</svg>

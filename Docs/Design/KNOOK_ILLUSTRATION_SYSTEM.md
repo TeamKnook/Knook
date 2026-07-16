@@ -1,5 +1,7 @@
 # Knook Illustration System
 
+The approved static-source inventory and privacy boundaries are documented in `Docs/Illustrations/ILLUSTRATION_SYSTEM_V1.md`.
+
 ## Source
 
 The system is derived from the Figma Make `app.fsx` concept supplied by the product team. The fixed `kn` and `k` wordmark uses Outfit Black. Only the two `o` characters animate.

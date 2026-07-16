@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 260" role="img" aria-labelledby="title">
+  <title id="title">Knook profile mirror wordmark</title>
+  <rect width="320" height="260" rx="20" fill="#F5F4EF"/>
+  <g fill="#111111" font-family="Outfit, Arial Rounded MT Bold, sans-serif" font-size="78" font-weight="900">
+    <text x="34" y="166">kn</text>
+    <text x="222" y="166">k</text>
+  </g>
+  <g fill="#EAB308">
+    <rect x="138" y="165" width="10" height="12" rx="5"/>
+    <rect x="189" y="165" width="10" height="12" rx="5"/>
+  </g>
+  <g fill="#F5F4EF" stroke="#111111" stroke-width="13">
+    <circle cx="143" cy="143" r="23"/>
+    <circle cx="194" cy="143" r="23"/>
+  </g>
+  <g stroke="#FFFFFF" stroke-linecap="round" stroke-width="3.5">
+    <path d="M131.5 130.35 L140.7 139.55"/>
+    <path d="M182.5 130.35 L191.7 139.55"/>
+  </g>
+</svg>
