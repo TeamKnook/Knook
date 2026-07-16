@@ -41,7 +41,12 @@ service cloud.firestore {
       return request.resource.data.uid == resource.data.uid
         && request.resource.data.phoneNumberE164 == resource.data.phoneNumberE164
         && request.resource.data.phoneLast4 == resource.data.phoneLast4
-        && request.resource.data.phoneHash == resource.data.phoneHash
+        && (
+          ('phoneHash' in resource.data
+            && request.resource.data.phoneHash == resource.data.phoneHash)
+          || (!('phoneHash' in resource.data)
+            && request.resource.data.phoneHash is string)
+        )
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.schemaVersion == resource.data.schemaVersion;
     }
@@ -123,7 +128,11 @@ service cloud.firestore {
     }
 
     match /matches/{matchId} {
-      allow read: if activeParticipant(matchId);
+      // Keep this query-compatible: listMatches constrains both fields below,
+      // allowing Firestore to prove every returned document is authorized.
+      allow read: if signedIn()
+        && resource.data.status == 'active'
+        && request.auth.uid in resource.data.participants;
       allow create, update, delete: if false;
 
       match /messages/{messageId} {

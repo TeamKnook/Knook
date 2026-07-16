@@ -4,15 +4,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { ScreenContainer, SectionHeader, EmptyState, PrimaryButton, KnookCard, KnookIllustration } from '@/src/components';
 import { useCrushes } from '@/src/hooks/useCrushes';
-import { useMatches } from '@/src/hooks/useMatches';
 import { colors, radius, spacing, typography } from '@/src/theme';
-import { activeMatchIds, getCrushDisplayModel } from '@/src/utils/crushPrivacy';
+import { getCrushDisplayModel } from '@/src/utils/crushPrivacy';
 import { formatCountdown, nextRevealAt } from '@/src/utils/timeUtils';
 
 export default function CrushesScreen() {
   const router = useRouter();
   const { crushes, loading, error, refresh } = useCrushes();
-  const { matches, refresh: refreshMatches } = useMatches();
   const [now, setNow] = useState(Date.now());
 
   const target = useMemo(() => nextRevealAt().getTime(), []);
@@ -21,16 +19,11 @@ export default function CrushesScreen() {
     return () => clearInterval(id);
   }, []);
 
-  const visibleActiveMatchIds = useMemo(() => activeMatchIds(matches), [matches]);
   const displayRows = useMemo(
-    () => crushes.map((crush) => ({ crush, display: getCrushDisplayModel(crush, visibleActiveMatchIds) })),
-    [crushes, visibleActiveMatchIds],
+    () => crushes.map((crush) => ({ crush, display: getCrushDisplayModel(crush) })),
+    [crushes],
   );
-  const privateCount = displayRows.filter((row) => row.display.state === 'private').length;
-  const matched = displayRows.filter((row) => row.display.isMatched).length;
-  const refreshAll = async () => {
-    await Promise.all([refresh(), refreshMatches()]);
-  };
+  const activeCount = displayRows.filter((row) => row.display.isActive).length;
 
   return (
     <ScreenContainer testID="crushes-screen">
@@ -55,12 +48,8 @@ export default function CrushesScreen() {
 
         <View style={styles.statsRow}>
           <View style={styles.stat}>
-            <Text style={styles.statNumber} testID="stat-private">{privateCount}</Text>
-            <Text style={styles.statLabel}>Private</Text>
-          </View>
-          <View style={styles.stat}>
-            <Text style={styles.statNumber} testID="stat-matched">{matched}</Text>
-            <Text style={styles.statLabel}>Matched</Text>
+            <Text style={styles.statNumber} testID="stat-active-crushes">{activeCount}</Text>
+            <Text style={styles.statLabel}>Active in your Private Circle</Text>
           </View>
         </View>
 
@@ -72,13 +61,13 @@ export default function CrushesScreen() {
         data={displayRows}
         keyExtractor={(item) => item.crush.phoneHash}
         contentContainerStyle={styles.listContent}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={refreshAll} tintColor={colors.knookPurple} />}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor={colors.knookPurple} />}
         ListEmptyComponent={
           !loading ? (
             <EmptyState
               illustration={<KnookIllustration state="binoculars" size="medium" testID="crushes-empty-illustration" />}
               title="No crushes yet"
-              description="Add up to 30 people from your contacts. Only mutual crushes are revealed at 6:30 PM IST."
+              description="Build your Private Circle from people you already know. Daily reveal is the only time a mutual match can appear."
               testID="crushes-empty"
             >
               <PrimaryButton
@@ -94,14 +83,10 @@ export default function CrushesScreen() {
           return (
             <View testID={`crush-row-${crush.phoneHash.slice(0, 6)}`} style={styles.row}>
               <View style={styles.avatar}>
-                <Ionicons
-                  name={display.isMatched ? 'heart' : 'heart-outline'}
-                  size={20}
-                  color={display.isMatched ? colors.knookYellow : colors.knookPurple}
-                />
+                <Ionicons name="heart-outline" size={20} color={colors.knookPurple} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>{display.title} · •••• {crush.phoneLast4 || '—'}</Text>
+                <Text style={styles.rowTitle}>{display.title}</Text>
                 <Text style={styles.rowSubtitle}>{display.subtitle}</Text>
               </View>
               <Text style={styles.rowBadge}>{display.badge}</Text>
@@ -128,7 +113,7 @@ const styles = StyleSheet.create({
   countdownRow: { flexDirection: 'row', alignItems: 'center' },
   countdownEyebrow: { ...typography.eyebrow, color: colors.knookYellow, textTransform: 'uppercase' },
   countdownTime: { ...typography.h2, color: colors.white, fontVariant: ['tabular-nums'] },
-  statsRow: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing.sm },
+  statsRow: { flexDirection: 'row', marginBottom: spacing.sm },
   stat: {
     flex: 1, backgroundColor: colors.white, borderRadius: radius.lg,
     padding: spacing.md, borderWidth: 1, borderColor: colors.knookLightGrey,

@@ -1,5 +1,7 @@
 # Product Context
 
+The normative product source of truth is `Docs/PRODUCT_RULES_V1_1.md`. This file is a shorter orientation and must not override those rules.
+
 ## Product
 
 Knook is a contacts-based anonymous dating app for people who already exist in a user's phone contacts.
@@ -23,7 +25,10 @@ After the match becomes active, users chat anonymously. Either person may choose
 - Raw contact names must remain on-device.
 - Phone numbers should be normalized and hashed for matching.
 - Mutual matches must remain hidden before 6:30 PM IST.
+- A user needs at least three active crushes, and so does the other participant, before a mutual match is reveal-eligible.
+- A reciprocal match that does not meet that threshold remains on `privacy_hold` and is re-checked at the next daily reveal.
 - A `pending_reveal` match must be indistinguishable from a one-sided crush in all user-facing UI.
+- Home must never show match status, matched counts, reciprocal styling, `privacy_hold`, or `pending_reveal`.
 - Anonymous chat must never show identifying information before mutual reveal.
 - Push notifications must not reveal identity.
 - Reveal must remain voluntary.
@@ -44,6 +49,6 @@ Knook should feel emotionally risky but technically private. The app may use pho
 - never upload raw contact names
 - reveal identities only after both sides explicitly choose Reveal
 
-## Current Preview Caveat
+## Current Migration Caveat
 
-The current local app uses `Backend/preview-api` and MongoDB only to review the Emergent-generated experience locally. This preview layer is temporary. Production should use Firebase Auth, Cloud Firestore, Cloud Functions, Firebase Storage, Firebase Cloud Messaging, Branch.io, and later RevenueCat.
+Firebase Auth, private user profiles, and current product-data foundations are present in development. `Backend/preview-api` and MongoDB remain temporary compatibility and local-test infrastructure. The V1.1 three-crush `privacy_hold` state machine, production contacts, notifications, access gate, and deferred monetization require dedicated later milestones.
