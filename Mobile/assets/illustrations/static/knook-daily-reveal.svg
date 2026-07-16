@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 260" role="img" aria-labelledby="title">
+  <title id="title">Knook daily reveal heart wordmark</title>
+  <rect width="320" height="260" rx="20" fill="#3B0764"/>
+  <g fill="#FFFFFF" font-family="Outfit, Arial Rounded MT Bold, sans-serif" font-size="78" font-weight="900">
+    <text x="34" y="166">kn</text>
+    <text x="222" y="166">k</text>
+  </g>
+  <g fill="#EAB308">
+    <path d="M143 161.39 C143 149.37 120.06 147.19 121.15 138.45 C121.15 126.43 143 126.43 143 138.45 C143 126.43 164.85 126.43 164.85 138.45 C165.94 147.19 143 149.37 143 161.39 Z"/>
+    <path d="M194 161.39 C194 149.37 171.06 147.19 172.15 138.45 C172.15 126.43 194 126.43 194 138.45 C194 126.43 215.85 126.43 215.85 138.45 C216.94 147.19 194 149.37 194 161.39 Z"/>
+  </g>
+</svg>

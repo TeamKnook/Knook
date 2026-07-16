@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 260" role="img" aria-labelledby="title">
+  <title id="title">Knook identity reveal surprised wordmark</title>
+  <rect width="320" height="260" rx="20" fill="#3B0764"/>
+  <g fill="#FFFFFF" font-family="Outfit, Arial Rounded MT Bold, sans-serif" font-size="78" font-weight="900">
+    <text x="34" y="166">kn</text>
+    <text x="222" y="166">k</text>
+  </g>
+  <g fill="none" stroke="#EAB308" stroke-width="3">
+    <circle cx="143" cy="143" r="31"/>
+    <circle cx="194" cy="143" r="31"/>
+  </g>
+  <g fill="#3B0764" stroke="#FFFFFF" stroke-width="13">
+    <circle cx="143" cy="143" r="23"/>
+    <circle cx="194" cy="143" r="23"/>
+  </g>
+  <g fill="#EAB308">
+    <circle cx="143" cy="143" r="8.74"/>
+    <circle cx="194" cy="143" r="8.74"/>
+  </g>
+</svg>
