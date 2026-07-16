@@ -4,7 +4,7 @@
   "description": "Firebase Cloud Functions for Knook (mutual crush detection, daily reveal, unhook handling).",
   "main": "lib/index.js",
   "scripts": {
-    "lint": "eslint --ext .ts src",
+    "lint": "eslint src",
     "build": "tsc",
     "test": "npm run build && node --test test/*.test.js",
     "serve": "npm run build && firebase emulators:start --only functions",
@@ -18,7 +18,10 @@
     "firebase-functions": "^5.0.0"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "8.62.1",
+    "@typescript-eslint/parser": "8.62.1",
     "typescript": "^5.4.0",
-    "@types/node": "^20.11.0"
+    "@types/node": "^20.11.0",
+    "eslint": "9.25.0"
   }
 }
