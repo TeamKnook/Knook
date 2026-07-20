@@ -61,7 +61,6 @@ function StaticOoFallback({
       >
         {mark}
       </Text>
-      {state === 'cupid' ? <View style={styles.staticCupidArrow} /> : null}
       {state === 'surprise' || state === 'mirror' ? <View style={styles.staticAccent} /> : null}
     </View>
   );
@@ -142,14 +141,6 @@ const styles = StyleSheet.create({
   wordLight: { color: colors.white },
   staticOo: { alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   staticOoText: { fontFamily: 'Outfit_900Black', lineHeight: undefined, letterSpacing: 0 },
-  staticCupidArrow: {
-    position: 'absolute',
-    width: '82%',
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.knookYellow,
-    transform: [{ rotate: '-24deg' }],
-  },
   staticAccent: {
     position: 'absolute',
     width: 7,

@@ -84,7 +84,12 @@ assert.doesNotMatch(profileService, /phoneNumberE164:\s*input/);
 
 const onboardingScreen = read('app/(onboarding)/profile.tsx');
 assert.match(onboardingScreen, /validateOnboardingInput/);
-assert.match(onboardingScreen, /completeOnboarding\(uid, input\)/);
+assert.match(onboardingScreen, /type OnboardingStep = 1 \| 2 \| 3/);
+assert.match(onboardingScreen, /setStep\(2\)/);
+assert.match(onboardingScreen, /setStep\(3\)/);
+assert.match(onboardingScreen, /completeOnboarding\(uid, onboardingInput\)/);
+assert.equal((onboardingScreen.match(/completeOnboarding\(/g) || []).length, 1);
+assert.match(onboardingScreen, /profile-save-button/);
 assert.match(onboardingScreen, /favourite-show-input/);
 assert.doesNotMatch(onboardingScreen, /firestoreService\.updateMe/);
 

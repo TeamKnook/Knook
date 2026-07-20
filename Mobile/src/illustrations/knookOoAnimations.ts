@@ -88,35 +88,32 @@ const rectangle = (
   ty: 'gr',
   nm: name,
   it: [
-    { ty: 'rc', p: value(position), s: value(size), r: value(radius), nm: `${name} path` },
+    { ty: 'rc', p: value([0, 0]), s: value(size), r: value(radius), nm: `${name} path` },
     fill(color),
-    transform({ r: value(rotation) }),
+    transform({ p: value(position), r: value(rotation) }),
   ],
 });
 
-const polygon = (
+const pathShape = (
   name: string,
-  position: [number, number],
-  points: number,
-  radius: number,
-  rotation: number,
-  color: Color,
+  vertices: [number, number][],
+  options: { closed?: boolean; fill?: Color; stroke?: Color; strokeWidth?: number },
 ) => ({
   ty: 'gr',
   nm: name,
   it: [
     {
-      ty: 'sr',
-      sy: 2,
-      d: 1,
-      pt: value(points),
-      p: value(position),
-      r: value(rotation),
-      or: value(radius),
-      os: value(0),
+      ty: 'sh',
+      ks: value({
+        i: vertices.map(() => [0, 0]),
+        o: vertices.map(() => [0, 0]),
+        v: vertices,
+        c: options.closed ?? false,
+      }),
       nm: `${name} path`,
     },
-    fill(color),
+    ...(options.fill ? [fill(options.fill)] : []),
+    ...(options.stroke ? [stroke(options.stroke, options.strokeWidth ?? 5)] : []),
     transform(),
   ],
 });
@@ -223,13 +220,36 @@ const binoculars = animation('Knook binoculars', [
   ),
 ]);
 
-const heartShapes = (cx: number, name: string) => ({
+const heartShape = (cx: number, name: string) => ({
   ty: 'gr',
   nm: name,
   it: [
-    ellipse(`${name} left lobe`, [cx - 7, 33], [25, 25], { fill: YELLOW }),
-    ellipse(`${name} right lobe`, [cx + 7, 33], [25, 25], { fill: YELLOW }),
-    rectangle(`${name} point`, [cx, 45], [26, 26], YELLOW, 2, 45),
+    {
+      ty: 'sh',
+      ks: value({
+        v: [
+          [cx, 62.26],
+          [cx - 27.31, 33.58],
+          [cx, 33.58],
+          [cx + 27.31, 33.58],
+        ],
+        i: [
+          [0, -15.03],
+          [-1.36, 10.93],
+          [0, -15.03],
+          [0, -15.03],
+        ],
+        o: [
+          [0, -15.03],
+          [0, -15.03],
+          [0, -15.03],
+          [1.36, 10.93],
+        ],
+        c: true,
+      }),
+      nm: `${name} path`,
+    },
+    fill(YELLOW),
     transform(),
   ],
 });
@@ -237,7 +257,7 @@ const heartShapes = (cx: number, name: string) => ({
 const hearts = animation('Knook hearts', [
   shapeLayer(
     'Heart pop',
-    [heartShapes(31, 'Left heart'), heartShapes(88, 'Right heart'), transform()],
+    [heartShape(31, 'Left heart'), heartShape(88, 'Right heart'), transform()],
     {
       s: animatedScale([
         { t: 0, s: [30, 30] },
@@ -258,20 +278,21 @@ const cupid = animation('Knook cupid', [
     transform(),
   ]),
   shapeLayer(
-    'Cupid arrow',
+    'Cupid paper plane',
     [
-      rectangle('Arrow shaft', [60, 40], [88, 4], YELLOW, 2, -30),
-      polygon('Arrow head', [101, 16], 3, 10, 60, YELLOW),
-      rectangle('Fletching one', [19, 59], [18, 4], YELLOW, 2, 15),
-      rectangle('Fletching two', [22, 66], [18, 4], YELLOW, 2, -45),
+      pathShape('Plane body', [[86, 12], [112, 4], [103, 30], [98, 19]], {
+        closed: true,
+        fill: YELLOW,
+      }),
+      pathShape('Plane fold', [[98, 19], [112, 4]], { stroke: WHITE, strokeWidth: 2 }),
       transform(),
     ],
     {
       p: animatedPosition([
-        { t: 0, s: [-20, 12] },
-        { t: 32, s: [0, 0] },
-        { t: 88, s: [0, 0] },
-        { t: 120, s: [20, -12] },
+        { t: 0, s: [0, 2] },
+        { t: 48, s: [0, -2] },
+        { t: 96, s: [0, 2] },
+        { t: 120, s: [0, 2] },
       ]),
     },
   ),
@@ -359,6 +380,5 @@ export type KnookIllustrationState = keyof typeof knookOoAnimations;
 
 export const knookIllustrationDarkStates = new Set<KnookIllustrationState>([
   'binoculars',
-  'hearts',
   'surprise',
 ]);

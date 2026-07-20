@@ -8,6 +8,7 @@ const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), 'u
 const animationSource = read('src/illustrations/knookOoAnimations.ts');
 const staticRegistrySource = read('src/illustrations/knookStaticIllustrations.ts');
 const componentSource = read('src/components/illustrations/KnookIllustration.tsx');
+const dailyRevealAsset = read('assets/illustrations/static/knook-daily-reveal.svg');
 const appConfigSource = read('app.config.js');
 const layoutSource = read('app/_layout.tsx');
 const crushesSource = read('app/(tabs)/crushes.tsx');
@@ -47,7 +48,11 @@ assert.match(layoutSource, /KnookBrandSplash/, 'opening splash must use the illu
 assert.match(crushesSource, /state="binoculars"/, 'empty private circle must use binoculars');
 assert.doesNotMatch(crushesSource, /state="hearts"/, 'matched hearts must never render on the pre-reveal Crushes screen');
 assert.match(chatsSource, /matches\.length[\s\S]*state="hearts"/, 'daily reveal hearts must require visible active matches');
-assert.match(chatSource, /state="cupid"/, 'anonymous chat must use the cupid state');
+assert.doesNotMatch(animationSource, /knookIllustrationDarkStates[\s\S]*'hearts'/, 'daily reveal hearts must use the clean light treatment');
+assert.doesNotMatch(dailyRevealAsset, /<rect/, 'daily reveal wordmark must not render a background panel');
+assert.match(dailyRevealAsset, /fill="#111111"/, 'daily reveal letters must render in near-black');
+assert.match(chatSource, /AnonymousChatIllustration/, 'anonymous chat must use its dedicated message illustration');
+assert.match(chatSource, /AmbientLineBackground/, 'anonymous chat must preserve the subtle line-art background');
 assert.match(chatSource, /state="unhook"/, 'unhook confirmation must use the unhook state');
 assert.match(revealSource, /state="surprise"/, 'identity reveal must use the surprise state');
 assert.match(profileSource, /state="mirror"/, 'profile must use the mirror state');

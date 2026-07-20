@@ -9,7 +9,7 @@ import type { Message } from '@/src/models';
 import { colors, radius, spacing, typography } from '@/src/theme';
 import { formatChatTime } from '@/src/utils/timeUtils';
 import { diagnostics } from '@/src/utils/diagnostics';
-import { KnookIllustration } from '@/src/components';
+import { AmbientLineBackground, AnonymousChatIllustration, KnookIllustration } from '@/src/components';
 
 export default function ChatScreen() {
   const router = useRouter();
@@ -101,12 +101,14 @@ export default function ChatScreen() {
           <Ionicons name="cut" size={20} color={colors.knookPurple} />
         </Pressable>
       </View>
+      {!match?.mutualReveal ? <View style={styles.anonymousAccent} /> : null}
 
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
+        <AmbientLineBackground variant="chat" />
         <FlatList
           ref={listRef}
           data={messages}
@@ -130,7 +132,7 @@ export default function ChatScreen() {
           }}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <KnookIllustration state="cupid" size="medium" testID="anonymous-chat-illustration" />
+              <AnonymousChatIllustration testID="anonymous-chat-illustration" />
               <Text style={styles.emptyTitle}>Say hello, anonymously.</Text>
               <Text style={styles.emptySub}>Real names appear only after you both reveal.</Text>
             </View>
@@ -156,7 +158,7 @@ export default function ChatScreen() {
             onPress={onSend}
             style={[styles.send, (sending || !draft.trim()) && styles.sendDisabled]}
           >
-            <Ionicons name="arrow-up" size={20} color={colors.white} />
+            <Ionicons name="paper-plane" size={18} color={colors.white} />
           </Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -199,7 +201,8 @@ const styles = StyleSheet.create({
   headerAction: {},
   title: { ...typography.h3, color: colors.knookDark },
   subtitle: { ...typography.caption, color: colors.knookMidGrey },
-  list: { padding: spacing.md, gap: spacing.sm, paddingBottom: spacing.lg },
+  anonymousAccent: { height: 3, backgroundColor: colors.knookYellow },
+  list: { flexGrow: 1, padding: spacing.md, gap: spacing.sm, paddingBottom: spacing.lg },
   bubbleRow: { flexDirection: 'row' },
   left: { justifyContent: 'flex-start' },
   right: { justifyContent: 'flex-end' },
@@ -212,7 +215,7 @@ const styles = StyleSheet.create({
   bubbleTime: { ...typography.caption, marginTop: 2, fontSize: 11 },
   outTime: { color: 'rgba(255,255,255,0.65)', textAlign: 'right' },
   inTime: { color: colors.knookMidGrey },
-  empty: { alignItems: 'center', paddingTop: spacing.xxl, gap: spacing.sm },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: spacing.xxxl, gap: spacing.sm },
   emptyTitle: { ...typography.h3, color: colors.knookDark, textAlign: 'center' },
   emptySub: { ...typography.body, color: colors.knookMidGrey, textAlign: 'center' },
   composer: {
